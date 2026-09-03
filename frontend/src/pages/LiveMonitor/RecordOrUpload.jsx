@@ -23,6 +23,9 @@ export function RecordOrUpload({ sessionId, onSessionChange, onAudioReady, onSim
   const audioPlayerRef = useRef(null);
   const mediaElementSourceRef = useRef(null);
   const fileInputRef = useRef(null);
+  const speechRecognitionRef = useRef(null);
+  const liveTranscriptRef = useRef('');
+  const peakVolumeRef = useRef(0);
   const idlePhaseRef = useRef(0);
 
   const stopVisualizer = useCallback(() => {
@@ -155,6 +158,11 @@ export function RecordOrUpload({ sessionId, onSessionChange, onAudioReady, onSim
         ctx.fillRect(i * barWidth + 1, height - barHeight, barWidth - 1.5, barHeight);
       }
 
+      // Track max peak
+      if (peakVal > peakVolumeRef.current) {
+        peakVolumeRef.current = peakVal;
+      }
+
       // Overlay Oscilloscope Trace Line
       ctx.lineWidth = 1.6;
       ctx.strokeStyle = '#f5f5f3';
@@ -273,6 +281,37 @@ export function RecordOrUpload({ sessionId, onSessionChange, onAudioReady, onSim
       }
 
       audioChunksRef.current = [];
+      liveTranscriptRef.current = '';
+      peakVolumeRef.current = 0;
+
+      // Start Web Speech Recognition if available in browser
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        try {
+          const recognition = new SpeechRecognition();
+          recognition.continuous = true;
+          recognition.interimResults = true;
+          recognition.lang = 'en-US';
+
+          recognition.onresult = (event) => {
+            let fullText = '';
+            for (let i = 0; i < event.results.length; i++) {
+              fullText += event.results[i][0].transcript + ' ';
+            }
+            liveTranscriptRef.current = fullText.trim();
+          };
+
+          recognition.onerror = (e) => {
+            console.log('Speech recognition notice:', e.error);
+          };
+
+          recognition.start();
+          speechRecognitionRef.current = recognition;
+        } catch (recErr) {
+          console.log('Speech recognition start note:', recErr);
+        }
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
       const mediaRecorder = new MediaRecorder(stream);
@@ -289,8 +328,25 @@ export function RecordOrUpload({ sessionId, onSessionChange, onAudioReady, onSim
         const url = URL.createObjectURL(audioBlob);
         setAudioUrl(url);
         setAudioFile({ name: `capture-${Date.now()}.wav`, size: audioBlob.size });
+
+        if (speechRecognitionRef.current) {
+          try { speechRecognitionRef.current.stop(); } catch (e) {}
+          speechRecognitionRef.current = null;
+        }
+
+        const transcript = liveTranscriptRef.current;
+        const peakVol = peakVolumeRef.current;
+        const isLowVol = peakVol > 0 && peakVol < 150;
+
         if (onAudioReady) {
-          onAudioReady({ blob: audioBlob, url, fileName: `capture-${Date.now()}.wav` });
+          onAudioReady({
+            blob: audioBlob,
+            url,
+            fileName: `capture-${Date.now()}.wav`,
+            recognizedTranscript: transcript,
+            peakVolume: peakVol,
+            isLowVolume: isLowVol
+          });
         }
         stream.getTracks().forEach((track) => track.stop());
         stopVisualizer();
@@ -387,11 +443,14 @@ export function RecordOrUpload({ sessionId, onSessionChange, onAudioReady, onSim
     return () => {
       stopVisualizer();
       if (timerRef.current) clearInterval(timerRef.current);
+      if (speechRecognitionRef.current) {
+        try { speechRecognitionRef.current.stop(); } catch (e) {}
+      }
     };
   }, [startIdleVisualizer, stopVisualizer]);
 
   const formatSeconds = (sec) => {
-    if (isNaN(sec) || sec < 0) return '00:00';
+    if (!Number.isFinite(sec) || isNaN(sec) || sec < 0) return '00:00';
     const mins = Math.floor(sec / 60);
     const secs = Math.floor(sec % 60);
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
@@ -565,11 +624,20 @@ export function RecordOrUpload({ sessionId, onSessionChange, onAudioReady, onSim
             </div>
 
             <div
+              className={`cursor-mode-card ${activeScenario === 'covert' ? 'active-threat' : ''}`}
+              onClick={() => onSimulateSample('covert')}
+            >
+              <span className="cursor-mode-bullet rose"></span>
+              <span className="cursor-mode-title">Whisper / Covert Distress</span>
+              <span className="cursor-mode-tag">Low-Vol Threat</span>
+            </div>
+
+            <div
               className={`cursor-mode-card ${activeScenario === 'fire' ? 'active-warning' : ''}`}
               onClick={() => onSimulateSample('fire')}
             >
               <span className="cursor-mode-bullet amber"></span>
-              <span className="cursor-mode-title">Smoke + Distress</span>
+              <span className="cursor-mode-title">Smoke + Alarm</span>
               <span className="cursor-mode-tag">Warning</span>
             </div>
 

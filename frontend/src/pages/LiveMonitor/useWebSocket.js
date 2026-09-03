@@ -19,11 +19,28 @@ export function useWebSocket(sessionId, options = {}) {
   const wsRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
   const shouldReconnectRef = useRef(autoReconnect);
+  const onResultReadyRef = useRef(onResultReady);
+  const onAlertRaisedRef = useRef(onAlertRaised);
+
+  // Keep callback refs updated without re-triggering connect
+  useEffect(() => {
+    onResultReadyRef.current = onResultReady;
+  }, [onResultReady]);
+
+  useEffect(() => {
+    onAlertRaisedRef.current = onAlertRaised;
+  }, [onAlertRaised]);
 
   const connect = useCallback(() => {
     if (!sessionId) return;
     if (wsRef.current && (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING)) {
       return;
+    }
+
+    // Clear any pending timeout
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
     }
 
     setStatus('connecting');
@@ -43,7 +60,7 @@ export function useWebSocket(sessionId, options = {}) {
 
           if (data.event === 'result_ready') {
             setLatestResult(data.payload);
-            if (onResultReady) onResultReady(data.payload);
+            if (onResultReadyRef.current) onResultReadyRef.current(data.payload);
           } else if (data.event === 'alert_raised') {
             const newAlert = data.payload;
             setAlerts((prev) => {
@@ -52,7 +69,7 @@ export function useWebSocket(sessionId, options = {}) {
               }
               return [newAlert, ...prev];
             });
-            if (onAlertRaised) onAlertRaised(data.payload);
+            if (onAlertRaisedRef.current) onAlertRaisedRef.current(data.payload);
           }
         } catch (err) {
           // ignore parse error
@@ -71,12 +88,19 @@ export function useWebSocket(sessionId, options = {}) {
 
       ws.onerror = () => {
         setStatus('error');
-        ws.close();
+        try {
+          ws.close();
+        } catch (e) {}
       };
     } catch (err) {
       setStatus('error');
+      if (shouldReconnectRef.current) {
+        reconnectTimeoutRef.current = setTimeout(() => {
+          connect();
+        }, reconnectInterval);
+      }
     }
-  }, [sessionId, url, reconnectInterval, onResultReady, onAlertRaised]);
+  }, [sessionId, url, reconnectInterval]);
 
   useEffect(() => {
     shouldReconnectRef.current = autoReconnect;
@@ -86,9 +110,12 @@ export function useWebSocket(sessionId, options = {}) {
       shouldReconnectRef.current = false;
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
       }
       if (wsRef.current) {
-        wsRef.current.close();
+        try {
+          wsRef.current.close();
+        } catch (e) {}
         wsRef.current = null;
       }
     };
@@ -102,10 +129,10 @@ export function useWebSocket(sessionId, options = {}) {
     setAlerts([]);
   }, []);
 
-  const injectMockResult = useCallback((mockResult) => {
-    setLatestResult(mockResult);
-    if (mockResult.alerts && Array.isArray(mockResult.alerts)) {
-      setAlerts(mockResult.alerts);
+  const injectMockResult = useCallback((result) => {
+    setLatestResult(result);
+    if (result && Array.isArray(result.alerts)) {
+      setAlerts(result.alerts);
     }
   }, []);
 
@@ -117,10 +144,8 @@ export function useWebSocket(sessionId, options = {}) {
     messages,
     dismissAlert,
     clearAlerts,
-    injectMockResult,
-    reconnect: connect
+    injectMockResult
   };
 }
 
 export default useWebSocket;
-
