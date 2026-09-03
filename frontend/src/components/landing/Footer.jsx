@@ -25,10 +25,10 @@ export function Footer({ onOpenConsole }) {
             </div>
             <div className="flex flex-col">
               <span className="font-['Space_Grotesk'] font-bold text-sm tracking-tight uppercase">
-                Smart Horizon
+                Vox
               </span>
               <span className="text-[10px] font-mono font-semibold text-[#6B6B6B]">
-                Context-Aware Forensic Acoustic Intelligence
+                Voice made easy
               </span>
             </div>
           </div>
@@ -38,44 +38,6 @@ export function Footer({ onOpenConsole }) {
               <span className="w-2 h-2 rounded-full bg-[#0A0A0A] animate-pulse" />
               <span className="font-semibold">NODAL CLOCK: {utcTime}</span>
             </div>
-
-            <button
-              type="button"
-              onClick={onOpenConsole}
-              className="px-3.5 py-1.5 rounded-full bg-[#0A0A0A] hover:bg-[#2E2E2E] active:scale-[0.98] text-white text-[11px] font-semibold transition-all duration-150 cursor-pointer shadow-xs focus-visible:outline-[#0A0A0A]"
-            >
-              Console Access
-            </button>
-          </div>
-        </div>
-
-        {/* Links Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-xs font-mono">
-          <div className="flex flex-col gap-3">
-            <span className="font-bold text-[#0A0A0A] uppercase tracking-wider">
-              Detection Engines
-            </span>
-            <a href="#detection" className="text-[#4A4A4A] hover:text-[#0A0A0A] transition-colors">
-              Multimodal Fusion
-            </a>
-            <a href="#detection" className="text-[#4A4A4A] hover:text-[#0A0A0A] transition-colors">
-              Diarization Validator
-            </a>
-            <a href="#detection" className="text-[#4A4A4A] hover:text-[#0A0A0A] transition-colors">
-              Acoustic Transients
-            </a>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <span className="font-bold text-[#0A0A0A] uppercase tracking-wider">
-              Platform
-            </span>
-            <a href="#how-it-works" className="text-[#4A4A4A] hover:text-[#0A0A0A] transition-colors">
-              How it works
-            </a>
-            <a href="#live-demo" className="text-[#4A4A4A] hover:text-[#0A0A0A] transition-colors">
-              Live Engine Test
-            </a>
             <button
               type="button"
               onClick={onOpenConsole}

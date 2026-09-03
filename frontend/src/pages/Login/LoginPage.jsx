@@ -67,7 +67,7 @@ export default function LoginPage({ onLoginSuccess }) {
         <div className="alm-brand-header">
           <div className="alm-brand-badge">
             <span className="pulse-indicator"></span>
-            <span>SMART HORIZON · ALM-NHCE</span>
+            <span>VOX · ALM-NHCE</span>
           </div>
           <h1 className="alm-title">Acoustic Scene Intelligence</h1>
           <p className="alm-subtitle">Real-time emergency perception, scene fusion & multi-modal audio monitoring</p>

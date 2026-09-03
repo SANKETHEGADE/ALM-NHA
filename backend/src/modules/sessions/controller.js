@@ -163,6 +163,7 @@ async function uploadAudio(req, res, next) {
 
     // Execute ML call asynchronously in the background
     setImmediate(async () => {
+      console.log(`[Sessions] Starting ML analysis for session ${sessionId}...`);
       try {
         const mlResult = await mlClient.analyzeAudio({
           sessionId,
@@ -170,6 +171,8 @@ async function uploadAudio(req, res, next) {
           filename,
           mimeType
         });
+
+        console.log(`[Sessions] ML analysis complete for session ${sessionId}`);
 
         // Update session status to done
         await queryDb('UPDATE audio_sessions SET status = $1 WHERE id = $2', ['done', sessionId]);
@@ -183,18 +186,20 @@ async function uploadAudio(req, res, next) {
           result: mlResult
         });
 
-        // Also check if Lahari's persistScene function exists directly
+        // Persist and broadcast via WebSocket
         try {
-          const laharyScene = require('../scene/persistScene');
-          if (typeof laharyScene === 'function') {
-            await laharyScene(sessionId, mlResult);
-          } else if (laharyScene && typeof laharyScene.persistScene === 'function') {
-            await laharyScene.persistScene(sessionId, mlResult);
+          const sceneModule = require('../scene/persistScene');
+          if (sceneModule && typeof sceneModule.persistSceneResult === 'function') {
+            const persisted = await sceneModule.persistSceneResult({ sessionId, mlResult });
+            console.log(`[Sessions] Result persisted & broadcast for session ${sessionId}`);
+          } else {
+            console.warn(`[Sessions] persistSceneResult not found, result saved to memory only`);
           }
-        } catch {
-          // Lahari's module not yet implemented or imported, event was emitted
+        } catch (err) {
+          console.error(`[Sessions] Error in persistSceneResult for ${sessionId}:`, err.message);
         }
       } catch (mlError) {
+        console.error(`[Sessions] ML analysis FAILED for session ${sessionId}:`, mlError.message);
         // Mark session as failed
         await queryDb('UPDATE audio_sessions SET status = $1 WHERE id = $2', ['failed', sessionId]);
 

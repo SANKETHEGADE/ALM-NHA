@@ -3,48 +3,8 @@
  * Forwards audio to Sanket's /analyze endpoint
  */
 
-const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
-const ML_TIMEOUT_MS = parseInt(process.env.ML_TIMEOUT_MS || '15000', 10);
-
-/**
- * Returns mock ML response adhering to Sanket's frozen contract JSON schema
- */
-function getMockMlResponse(sessionId) {
-  return {
-    session_id: sessionId || 'sess_mock123',
-    duration_sec: 8.4,
-    transcript: {
-      text: "Someone help, there's smoke coming from the kitchen!",
-      language: "en",
-      confidence: 0.91
-    },
-    sound_events: [
-      { label: "smoke_alarm", confidence: 0.87, start_sec: 1.2, end_sec: 3.0 },
-      { label: "shouting", confidence: 0.78, start_sec: 0.0, end_sec: 2.1 }
-    ],
-    emotion: {
-      primary: "fear",
-      confidence: 0.82,
-      arousal: "high"
-    },
-    speakers: {
-      count: 1,
-      diarization: [
-        { speaker_id: "spk_1", start_sec: 0.0, end_sec: 8.4 }
-      ]
-    },
-    model_insight: {
-      label: "fire_emergency",
-      confidence: 0.89
-    },
-    reasoning: {
-      trace: "High-arousal fear speech co-occurs with a smoke alarm sound.",
-      summary: "A person is shouting for help in a high-stress, fearful tone while a smoke alarm is audible — likely a fire emergency.",
-      severity_hint: "critical"
-    },
-    processing_ms: 1840
-  };
-}
+const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://127.0.0.1:8000';
+const ML_TIMEOUT_MS = parseInt(process.env.ML_TIMEOUT_MS || '120000', 10);
 
 /**
  * Call POST /analyze on ML Service
@@ -63,12 +23,7 @@ async function analyzeAudio({ sessionId, audioBuffer, filename = 'audio.wav', mi
     throw new Error('sessionId is required for ML analysis');
   }
 
-  // Support local development / offline mocking
-  if (process.env.MOCK_ML === 'true') {
-    // Simulate brief processing delay
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    return getMockMlResponse(sessionId);
-  }
+
 
   let attempt = 0;
   const maxAttempts = 2; // initial + 1 retry on 500
@@ -133,7 +88,6 @@ async function analyzeAudio({ sessionId, audioBuffer, filename = 'audio.wav', mi
 
 module.exports = {
   analyzeAudio,
-  getMockMlResponse,
   ML_SERVICE_URL,
   ML_TIMEOUT_MS
 };

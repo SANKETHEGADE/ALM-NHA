@@ -34,7 +34,7 @@ export function HeroSection({ onOpenConsole }) {
       {/* 1. Giant Oversized Background Parallax Wordmark */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0 overflow-hidden">
         <div className="font-['Space_Grotesk'] font-black text-[13vw] leading-none tracking-tighter text-[#0A0A0A]/[0.035] uppercase whitespace-nowrap transform -translate-y-6">
-          SMART HORIZON
+          VOX
         </div>
       </div>
 
@@ -45,7 +45,7 @@ export function HeroSection({ onOpenConsole }) {
             [01/06]
           </span>
           <span className="text-[11px] font-mono font-semibold tracking-wider text-[#6B6B6B] uppercase">
-            Forensic Acoustic Intelligence Platform
+            Voice made easy
           </span>
         </div>
 

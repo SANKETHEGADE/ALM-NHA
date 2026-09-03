@@ -1,4 +1,3 @@
-const url = require('url');
 const { registerClient, unregisterClient } = require('./broadcast');
 
 let wssInstance = null;
@@ -21,7 +20,7 @@ function initWebSocketServer(httpServer) {
   wssInstance = wss;
 
   httpServer.on('upgrade', (request, socket, head) => {
-    const parsedUrl = url.parse(request.url, true);
+    const parsedUrl = new URL(request.url, `http://${request.headers.host || 'localhost'}`);
     const pathname = parsedUrl.pathname || '';
 
     if (pathname.startsWith('/ws')) {
@@ -32,15 +31,15 @@ function initWebSocketServer(httpServer) {
   });
 
   wss.on('connection', (ws, req) => {
-    const parsedUrl = url.parse(req.url, true);
+    const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
     const pathname = parsedUrl.pathname || '';
 
     let sessionId = null;
     const sessionMatch = pathname.match(/^\/ws\/sessions\/([^/]+)/);
     if (sessionMatch) {
       sessionId = sessionMatch[1];
-    } else if (parsedUrl.query && parsedUrl.query.session_id) {
-      sessionId = parsedUrl.query.session_id;
+    } else if (parsedUrl.searchParams && parsedUrl.searchParams.get('session_id')) {
+      sessionId = parsedUrl.searchParams.get('session_id');
     }
 
     registerClient(sessionId, ws);

@@ -14,12 +14,13 @@ export function ComposerBar({
   onLiveCaptureStop,
   onAudioUploaded,
   onLoadScenario,
+  onAudioTelemetryUpdate,
   isCapturing,
   isLoading
 }) {
   const [recordSeconds, setRecordSeconds] = useState(0);
   const [liveTranscript, setLiveTranscript] = useState('');
-  const [micVolume, setMicVolume] = useState([4, 6, 8, 5, 10, 6, 4, 7]);
+  const [micVolume, setMicVolume] = useState([]);
   const [errorMessage, setErrorMessage] = useState(null);
   const [measuredPitch, setMeasuredPitch] = useState(null);
   const [measuredRms, setMeasuredRms] = useState(null);
@@ -31,6 +32,8 @@ export function ComposerBar({
   const analyserRef = useRef(null);
   const animFrameRef = useRef(null);
   const mediaStreamRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const mediaChunksRef = useRef([]);
   const liveTranscriptAccumulatorRef = useRef('');
 
   // Setup Web Speech Recognition API
@@ -55,7 +58,7 @@ export function ComposerBar({
         recognition.onerror = (event) => {
           console.warn('[ComposerBar SpeechRecognition] error:', event.error);
           if (event.error === 'not-allowed') {
-            setErrorMessage('Microphone permission denied. Please enable microphone access in your browser settings.');
+            setErrorMessage('Microphone permission denied. Please enable microphone access in browser settings.');
           }
         };
 
@@ -76,6 +79,10 @@ export function ComposerBar({
       try { recognitionRef.current.stop(); } catch (e) {}
     }
 
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      try { mediaRecorderRef.current.stop(); } catch (e) {}
+    }
+
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach((track) => track.stop());
       mediaStreamRef.current = null;
@@ -87,7 +94,7 @@ export function ComposerBar({
     }
   };
 
-  // Start / Stop Live Voice to Text Recording
+  // Start / Stop Live Voice Recording
   const handleToggleCapture = async () => {
     setErrorMessage(null);
 
@@ -98,25 +105,28 @@ export function ComposerBar({
       const pitch = measuredPitch;
       const rms = measuredRms;
 
+      const recordedBlob = mediaChunksRef.current.length > 0
+        ? new Blob(mediaChunksRef.current, { type: 'audio/wav' })
+        : null;
+
       stopAudioCaptureResources();
       setRecordSeconds(0);
       setLiveTranscript('');
       liveTranscriptAccumulatorRef.current = '';
+      if (onAudioTelemetryUpdate) onAudioTelemetryUpdate([]);
 
-      if (!finalRecordedText) {
-        onLiveCaptureStop('Audio sample captured via live microphone — vocal scene evaluated.', duration, { measuredPitch: pitch, measuredRms: rms });
-      } else {
-        onLiveCaptureStop(finalRecordedText, duration, { measuredPitch: pitch, measuredRms: rms });
-      }
+      const defaultText = finalRecordedText || '';
+      onLiveCaptureStop(defaultText, duration, { measuredPitch: pitch, measuredRms: rms }, recordedBlob);
 
     } else {
       // START RECORDING
       setRecordSeconds(0);
       setLiveTranscript('');
       liveTranscriptAccumulatorRef.current = '';
+      mediaChunksRef.current = [];
 
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        setErrorMessage('Microphone audio capture is not supported in this browser environment.');
+        setErrorMessage('Microphone audio capture is not supported in this browser.');
         return;
       }
 
@@ -130,12 +140,26 @@ export function ComposerBar({
         });
         mediaStreamRef.current = stream;
 
+        // Setup MediaRecorder for binary WAV/WebM audio blob capture
+        try {
+          const mediaRecorder = new MediaRecorder(stream);
+          mediaRecorder.ondataavailable = (e) => {
+            if (e.data && e.data.size > 0) {
+              mediaChunksRef.current.push(e.data);
+            }
+          };
+          mediaRecorder.start(100);
+          mediaRecorderRef.current = mediaRecorder;
+        } catch (e) {
+          console.warn('[ComposerBar] MediaRecorder init warning:', e);
+        }
+
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         if (AudioContext) {
           const audioCtx = new AudioContext();
           audioContextRef.current = audioCtx;
           const analyser = audioCtx.createAnalyser();
-          analyser.fftSize = 2048;
+          analyser.fftSize = 1024;
           analyserRef.current = analyser;
 
           const source = audioCtx.createMediaStreamSource(stream);
@@ -161,17 +185,22 @@ export function ComposerBar({
               setMeasuredPitch(detectedPitch);
             }
 
-            const bars = [
-              Math.max(4, (freqArray[0] || 0) / 10),
-              Math.max(4, (freqArray[2] || 0) / 9),
-              Math.max(4, (freqArray[4] || 0) / 8),
-              Math.max(4, (freqArray[6] || 0) / 7),
-              Math.max(4, (freqArray[8] || 0) / 8),
-              Math.max(4, (freqArray[10] || 0) / 9),
-              Math.max(4, (freqArray[12] || 0) / 10),
-              Math.max(4, (freqArray[14] || 0) / 11)
-            ];
-            setMicVolume(bars);
+            // Sample 48 real-time FFT frequency bins responsive to actual microphone audio
+            const numBars = 48;
+            const step = Math.max(1, Math.floor((analyser.frequencyBinCount * 0.7) / numBars));
+            const realSpectrogramBars = [];
+
+            for (let b = 0; b < numBars; b++) {
+              const rawVal = freqArray[b * step] || 0;
+              const pct = Math.max(5, Math.min(98, Math.floor((rawVal / 255) * 100)));
+              realSpectrogramBars.push(pct);
+            }
+
+            setMicVolume(realSpectrogramBars);
+            if (onAudioTelemetryUpdate) {
+              onAudioTelemetryUpdate(realSpectrogramBars);
+            }
+
             animFrameRef.current = requestAnimationFrame(updateLiveMeter);
           };
           updateLiveMeter();
@@ -213,10 +242,10 @@ export function ComposerBar({
   };
 
   return (
-    <div className="bg-gradient-to-t from-[#0C0C0E] via-[#101013] to-[#121215] border-t border-white/[0.08] p-5 shrink-0 flex flex-col gap-3.5 select-none shadow-2xl">
+    <div className="w-full bg-[#121212] border-t border-[#262626] p-4 shrink-0 flex flex-col gap-3 items-center justify-center select-none">
       {/* Error Banner */}
       {errorMessage && (
-        <div className="bg-red-500/15 border border-red-500/40 rounded-xl p-3 px-4 flex items-center justify-between gap-3 text-xs font-mono text-red-400 animate-in fade-in duration-150 shadow-sm">
+        <div className="bg-[#1e1e1e] border border-red-500/30 rounded-xl p-3 px-4 flex items-center justify-between gap-3 text-xs text-[#f87171] shadow-sm w-full">
           <div className="flex items-center gap-2.5">
             <AlertTriangle className="w-4 h-4 shrink-0" />
             <span>{errorMessage}</span>
@@ -224,7 +253,7 @@ export function ComposerBar({
           <button
             type="button"
             onClick={() => setErrorMessage(null)}
-            className="text-[10px] uppercase font-bold underline cursor-pointer hover:text-white"
+            className="text-[11px] font-medium underline cursor-pointer text-[#8e8ea0] hover:text-white"
           >
             Dismiss
           </button>
@@ -233,152 +262,96 @@ export function ComposerBar({
 
       {/* Live Progressive Speech Transcription Display while Recording */}
       {isCapturing && (
-        <div className="bg-[#1A1A1E] border border-white/20 rounded-xl p-3.5 flex items-center gap-3.5 animate-in fade-in slide-in-from-bottom-1 duration-150 shadow-lg">
-          <div className="w-7 h-7 rounded-full bg-white/10 border border-white/20 flex items-center justify-center shrink-0">
-            <Volume2 className="w-4 h-4 text-white animate-pulse" />
-          </div>
-          <div className="flex items-center gap-2.5 min-w-0 flex-1">
-            <span className="text-[10px] font-mono font-bold text-white uppercase tracking-wider shrink-0">
+        <div className="bg-[#1e1e1e] border border-[#2d2d2d] rounded-xl p-3 flex items-center gap-3 animate-in fade-in duration-150">
+          <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping shrink-0" />
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <span className="text-xs font-medium text-[#ececec] shrink-0">
               Live Voice to Text:
             </span>
-            <span className="text-xs text-neutral-200 italic font-sans truncate">
-              {liveTranscript ? `"${liveTranscript}"` : 'Listening for spoken voice... (speak naturally)'}
+            <span className="text-xs text-[#8e8ea0] italic truncate">
+              {liveTranscript ? `"${liveTranscript}"` : 'Listening for spoken voice...'}
             </span>
           </div>
           {measuredPitch && (
-            <span className="text-[10px] font-mono font-bold text-neutral-400 shrink-0 hidden sm:inline tabular-nums">
+            <span className="text-xs text-[#8e8ea0] shrink-0 hidden sm:inline">
               F0: {measuredPitch} Hz
             </span>
           )}
         </div>
       )}
 
-      {/* Benchmark Suite Presets (Matching Landing Page Capsule Style) */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5 text-xs">
-        <div className="flex items-center gap-2 text-[11px] font-mono font-bold text-neutral-400">
-          <Sparkles className="w-3.5 h-3.5 text-white" />
-          <span className="tracking-widest uppercase">BENCHMARK SUITE:</span>
-        </div>
+      {/* Suggestion Chips Above Action Bar */}
+      <div className="flex flex-wrap items-center justify-center gap-2 text-xs">
+        <button
+          type="button"
+          onClick={() => onLoadScenario('joke')}
+          disabled={isLoading || isCapturing}
+          className="bg-[#1e1e1e] hover:bg-[#282828] border border-[#2d2d2d] text-[#ececec] text-xs px-3 py-1 rounded-full transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+          title="Regression Benchmark: Explicit joke with 'help' keyword"
+        >
+          <Sparkles className="w-3 h-3 text-[#8e8ea0]" />
+          <span>Joke Regression</span>
+        </button>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Seeded Joke Regression Case */}
-          <button
-            type="button"
-            onClick={() => onLoadScenario('joke')}
-            disabled={isLoading || isCapturing}
-            className="h-8 px-3.5 rounded-full bg-white/[0.05] hover:bg-white/[0.12] active:scale-[0.98] border border-white/[0.12] text-[11px] font-mono font-bold uppercase tracking-wider text-neutral-200 hover:text-white transition-all duration-150 cursor-pointer disabled:opacity-50 focus-visible:outline-white/40 shadow-xs flex items-center gap-1.5"
-            title="Regression Benchmark: Explicit joke with 'help' keyword"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
-            <span>Seeded Joke Regression</span>
-          </button>
+        <button
+          type="button"
+          onClick={() => onLoadScenario('emergency')}
+          disabled={isLoading || isCapturing}
+          className="bg-[#1e1e1e] hover:bg-[#282828] border border-[#2d2d2d] text-[#ececec] text-xs px-3 py-1 rounded-lg transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+          title="Active Threat: Gunfire transient & high-arousal distress"
+        >
+          <Sparkles className="w-3 h-3 text-[#8e8ea0]" />
+          <span>Real Emergency</span>
+        </button>
 
-          {/* Real Emergency */}
-          <button
-            type="button"
-            onClick={() => onLoadScenario('emergency')}
-            disabled={isLoading || isCapturing}
-            className="h-8 px-3.5 rounded-full bg-white/[0.05] hover:bg-white/[0.12] active:scale-[0.98] border border-white/[0.12] text-[11px] font-mono font-bold uppercase tracking-wider text-neutral-200 hover:text-white transition-all duration-150 cursor-pointer disabled:opacity-50 focus-visible:outline-white/40 shadow-xs flex items-center gap-1.5"
-            title="Active Threat: Gunfire transient & high-arousal distress"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.6)]" />
-            <span>Real Emergency</span>
-          </button>
-
-          {/* Hypothetical */}
-          <button
-            type="button"
-            onClick={() => onLoadScenario('hypothetical')}
-            disabled={isLoading || isCapturing}
-            className="h-8 px-3.5 rounded-full bg-white/[0.05] hover:bg-white/[0.12] active:scale-[0.98] border border-white/[0.12] text-[11px] font-mono font-bold uppercase tracking-wider text-neutral-300 hover:text-white transition-all duration-150 cursor-pointer disabled:opacity-50 focus-visible:outline-white/40 shadow-xs flex items-center gap-1.5"
-            title="Hypothetical inquiry with weapon keywords"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-neutral-400" />
-            <span>Hypothetical</span>
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => onLoadScenario('hypothetical')}
+          disabled={isLoading || isCapturing}
+          className="bg-[#1e1e1e] hover:bg-[#282828] border border-[#2d2d2d] text-[#ececec] text-xs px-3 py-1 rounded-lg transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+          title="Hypothetical inquiry with weapon keywords"
+        >
+          <Sparkles className="w-3 h-3 text-[#8e8ea0]" />
+          <span>Hypothetical</span>
+        </button>
       </div>
 
-      {/* Main Action Bar: Matched Pair of Pill Buttons (Voice to Text & Upload Audio) */}
-      <div className="flex items-center justify-between gap-4 bg-[#151518] border border-white/[0.09] rounded-2xl p-3 shadow-lg shadow-black/30">
-        {/* Left: Real-time Audio Level Telemetry */}
-        <div className="flex items-center gap-3 pl-2 min-w-0">
-          {isCapturing ? (
-            <div className="flex items-center gap-3">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]" />
-              </span>
-              <span className="text-xs font-mono font-bold text-red-400 uppercase tracking-widest tabular-nums">
-                LISTENING {formatSeconds(recordSeconds)}
-              </span>
+      {/* CENTERED BACKGROUNDLESS ACTION BAR (No chat text box, centered Mic & Upload ghost icons) */}
+      <div className="flex items-center justify-center gap-5 py-2">
+        {/* Hidden File Input */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac"
+          className="hidden"
+        />
 
-              {/* Dynamic Waveform Visualizer */}
-              <div className="flex items-center gap-1 ml-2">
-                {micVolume.map((h, i) => (
-                  <span
-                    key={i}
-                    style={{ height: `${Math.min(22, Math.max(4, h))}px` }}
-                    className="w-1 bg-white rounded-full transition-all duration-75 shadow-xs"
-                  />
-                ))}
-              </div>
-            </div>
-          ) : (
-            <span className="text-xs font-mono font-semibold tracking-wider text-neutral-400 uppercase truncate">
-              Ready for forensic capture · 48 kHz Linear PCM
-            </span>
-          )}
-        </div>
+        {/* 1. Mic Ghost Button (Centered, Backgroundless, Icon Only, No Text) */}
+        <button
+          type="button"
+          onClick={handleToggleCapture}
+          disabled={isLoading}
+          className={`p-3 rounded-full bg-transparent transition-all duration-150 active:scale-95 cursor-pointer ${
+            isCapturing
+              ? 'text-red-500 animate-pulse'
+              : 'text-white hover:text-neutral-300 hover:bg-[#1e1e1e]/50'
+          }`}
+          title={isCapturing ? "Stop Voice Recording" : "Start Voice Recording"}
+        >
+          {isCapturing ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+        </button>
 
-        {/* Right Action Controls: Matched Pair of Rounded-Full Pills */}
-        <div className="flex items-center gap-3 shrink-0">
-          {/* Hidden File Input */}
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac"
-            className="hidden"
-          />
-
-          {/* 1. MATCHED PAIR: Voice to Text Control (Solid White Pill matching landing page "Try live demo") */}
-          <button
-            type="button"
-            onClick={handleToggleCapture}
-            disabled={isLoading}
-            className={`h-11 px-6 rounded-full flex items-center gap-2 text-xs font-mono font-bold tracking-tight uppercase transition-all duration-150 active:scale-[0.98] cursor-pointer shadow-md focus-visible:outline-white/40 ${
-              isCapturing
-                ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.4)]'
-                : 'bg-white hover:bg-neutral-200 text-[#0A0A0C] border border-white shadow-sm hover:shadow-md'
-            }`}
-            title={isCapturing ? "Stop voice recording and evaluate text" : "Start live Voice to Text speech capture"}
-          >
-            {isCapturing ? (
-              <>
-                <MicOff className="w-4 h-4" />
-                <span>Stop Voice to Text</span>
-              </>
-            ) : (
-              <>
-                <Mic className="w-4 h-4 text-[#0A0A0C]" />
-                <span>Voice to Text</span>
-              </>
-            )}
-          </button>
-
-          {/* 2. MATCHED PAIR: Upload Audio Button (Outline Pill matching landing page "See how it works") */}
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isCapturing || isLoading}
-            className="h-11 px-6 bg-transparent hover:bg-white hover:text-[#0A0A0C] active:scale-[0.98] border border-white/20 hover:border-white rounded-full flex items-center gap-2 text-xs font-mono font-bold tracking-tight uppercase text-white transition-all duration-150 cursor-pointer disabled:opacity-50 focus-visible:outline-white/40 shadow-sm"
-            title="Upload audio file for forensic fusion"
-          >
-            <Upload className="w-4 h-4" />
-            <span className="hidden sm:inline">Upload Audio</span>
-          </button>
-        </div>
+        {/* 2. Upload Ghost Button (Next to Mic, Centered, Backgroundless, Icon Only, No Text) */}
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isCapturing || isLoading}
+          className="p-3 rounded-full bg-transparent text-[#8e8ea0] hover:text-white hover:bg-[#1e1e1e]/50 transition-all duration-150 active:scale-95 cursor-pointer disabled:opacity-50"
+          title="Upload Audio File"
+        >
+          <Upload className="w-6 h-6" />
+        </button>
       </div>
     </div>
   );

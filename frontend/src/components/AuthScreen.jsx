@@ -46,10 +46,10 @@ export function AuthScreen({ onAuthSuccess }) {
             <Shield className="w-6 h-6" />
           </div>
           <h1 className="text-xl font-bold tracking-tight text-white mt-1">
-            Smart Horizon
+            Vox
           </h1>
           <p className="text-xs text-[#9E9EA4] font-mono">
-            Context-Aware Forensic Acoustic Intelligence
+            Voice made easy
           </p>
         </div>
 

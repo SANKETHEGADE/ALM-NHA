@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 
 const sceneRoutes = require('./modules/scene/routes');
+const sessionRoutes = require('./modules/sessions/routes');
 const alertRoutes = require('./modules/alerts/routes');
 const { initWebSocketServer } = require('./websocket/server');
 
@@ -12,6 +13,7 @@ const server = http.createServer(app);
 app.use(cors());
 app.use(express.json());
 
+app.use('/api/v1/sessions', sessionRoutes);
 app.use('/api/v1/sessions', sceneRoutes);
 app.use('/api/v1/alerts', alertRoutes);
 

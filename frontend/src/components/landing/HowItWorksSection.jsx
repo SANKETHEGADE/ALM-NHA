@@ -54,7 +54,7 @@ export function HowItWorksSection() {
               <span>[02/06] ARCHITECTURE</span>
             </div>
             <h2 className="font-['Space_Grotesk'] text-3xl md:text-5xl font-bold tracking-tight text-[#0A0A0A] uppercase">
-              How Smart Horizon Works
+              How Vox Works
             </h2>
           </div>
           <p className="text-sm font-sans text-[#6B6B6B] max-w-md leading-relaxed">

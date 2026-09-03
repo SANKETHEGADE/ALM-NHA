@@ -71,8 +71,11 @@ export function segmentSpokenUtterance(fullText = '', totalDuration = 4.0) {
   const text = (fullText || '').trim();
   if (!text) return [{ start: 0.0, end: totalDuration, text: '', speaker_id: 'Speaker 1' }];
 
-  // Match sentences or dialogue markers
+  // Match sentences or explicit dialogue turn markers (. ! ? or comma + turn keyword)
   const sentences = text.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [text];
+
+  // If text is a single continuous sentence (e.g. "Hello, how are you?"),
+  // treat the entire utterance as Speaker 1 unless explicit turn-taking markers occur.
   if (sentences.length <= 1) {
     return [{
       start: 0.0,
@@ -84,8 +87,8 @@ export function segmentSpokenUtterance(fullText = '', totalDuration = 4.0) {
 
   const rawSegments = [];
   const timePerSegment = totalDuration / sentences.length;
-
   let currentSpeaker = 1;
+
   for (let i = 0; i < sentences.length; i++) {
     const sText = sentences[i].trim();
     if (!sText) continue;
@@ -93,14 +96,14 @@ export function segmentSpokenUtterance(fullText = '', totalDuration = 4.0) {
     const start = Number((i * timePerSegment).toFixed(1));
     const end = Number(((i + 1) * timePerSegment).toFixed(1));
 
-    // Detect if this sentence is a turn take from previous
+    // Detect if this segment represents a genuine turn take from previous
     if (i > 0) {
       const prevText = sentences[i - 1].trim();
       const hasTurnTake = isTurnTakingText(sText);
       const isContinuous = isGrammaticallyContinuous(prevText, sText);
 
       if (hasTurnTake && !isContinuous) {
-        currentSpeaker = currentSpeaker === 1 ? 2 : (currentSpeaker === 2 ? 1 : 2);
+        currentSpeaker = currentSpeaker === 1 ? 2 : 1;
       }
     }
 
@@ -177,26 +180,31 @@ export function validateSpeakerSegments(candidateSegments = [], options = {}) {
     const isContinuous = isGrammaticallyContinuous(currentSeg.text, nextText);
     const hasTurnTaking = isTurnTakingText(nextText);
     const hasLowSimilarity = (embeddingSim !== null && embeddingSim < similarityThreshold);
+    const hasDifferentSpeakerId = (nextCand.speaker_id && currentSeg.speaker_id && nextCand.speaker_id !== currentSeg.speaker_id);
 
     let shouldSplit = false;
     let decisionReason = '';
 
-    // Rule 3: Dual condition required for a speaker split
-    if (hasLowSimilarity && hasTurnTaking && !isContinuous) {
+    // RULE 1: Grammatical & Semantic Continuity Overrides Fallback Splits
+    // "Hello, how" + "are you?" is continuous -> MUST MERGE INTO Speaker 1
+    if (isContinuous && !hasTurnTaking && (embeddingSim === null || embeddingSim >= 0.65)) {
+      shouldSplit = false;
+      decisionReason = `Grammatically continuous sentence across ${pauseSec.toFixed(1)}s pause; single speaker train of thought`;
+    } else if (hasDifferentSpeakerId && (hasLowSimilarity || hasTurnTaking)) {
       shouldSplit = true;
-      decisionReason = `Distinct voiceprint embedding (${Math.round(embeddingSim * 100)}% < ${Math.round(similarityThreshold * 100)}%) and distinct turn-taking dialogue marker`;
-    } else if (isContinuous) {
-      shouldSplit = false;
-      decisionReason = `grammatically continuous sentence across ${pauseSec.toFixed(1)}s pause; single speaker train of thought`;
-    } else if (!hasTurnTaking) {
-      shouldSplit = false;
-      decisionReason = `no turn-taking markers; pause only ${pauseSec.toFixed(1)}s, voice variations within single speaker baseline`;
-    } else if (embeddingSim === null) {
-      shouldSplit = false;
-      decisionReason = `no distinct acoustic voiceprint embedding available; defaulted conservatively to same speaker`;
+      decisionReason = `Acoustic diarization identified distinct speaker (${nextCand.speaker_id} vs ${currentSeg.speaker_id})`;
+    } else if (hasLowSimilarity) {
+      shouldSplit = true;
+      decisionReason = `Distinct voiceprint embedding (${Math.round((embeddingSim || 0) * 100)}% < ${Math.round(similarityThreshold * 100)}%)`;
+    } else if (hasTurnTaking && !isContinuous) {
+      shouldSplit = true;
+      decisionReason = `Distinct turn-taking dialogue marker detected`;
+    } else if (pauseSec > 1.5 && !isContinuous) {
+      shouldSplit = true;
+      decisionReason = `Significant acoustic pause (${pauseSec.toFixed(1)}s) between non-continuous utterances`;
     } else {
       shouldSplit = false;
-      decisionReason = `voiceprint similarity (${Math.round(embeddingSim * 100)}%) above threshold or ambiguous context`;
+      decisionReason = `Single speaker baseline or continuous sentence`;
     }
 
     if (shouldSplit) {
@@ -220,7 +228,9 @@ export function validateSpeakerSegments(candidateSegments = [], options = {}) {
         reason: decisionReason
       });
       currentSeg.end = nextEnd;
-      currentSeg.text = `${currentSeg.text} ${nextText}`.trim();
+      if (nextText && !currentSeg.text.includes(nextText)) {
+        currentSeg.text = `${currentSeg.text} ${nextText}`.trim();
+      }
     }
   }
 

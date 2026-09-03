@@ -1,24 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Shield, ChevronDown, ArrowUpRight, Terminal, Globe } from 'lucide-react';
 
 export function Navbar({ onOpenConsole }) {
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [currentLocale, setCurrentLocale] = useState('GLOBAL [UTC] · EN');
+  const [isVisible, setIsVisible] = useState(true);
+
+  // Dynamic Scroll Listener: Hides Navbar when scrolling down, shows when scrolling up
+  useEffect(() => {
+    let lastScrollY = window.scrollY;
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > lastScrollY && currentScrollY > 60) {
+        setIsVisible(false); // Hide on scroll down
+      } else {
+        setIsVisible(true);  // Show on scroll up
+      }
+      lastScrollY = currentScrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
-    <header className="w-full fixed top-0 left-0 z-50 bg-[#FAFAFA]/90 backdrop-blur-md border-b border-[#E4E4E4] transition-all duration-200">
+    <header
+      className={`w-full fixed top-0 left-0 z-50 bg-[#FAFAFA]/90 backdrop-blur-md border-b border-[#E4E4E4] transition-transform duration-300 ease-in-out ${
+        isVisible ? 'translate-y-0' : '-translate-y-full'
+      }`}
+    >
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        {/* Left: Brand Wordmark */}
-        <a href="#hero" className="flex items-center gap-2.5 group">
-          <div className="w-7 h-7 bg-[#0A0A0A] text-white flex items-center justify-center font-mono font-black text-xs tracking-tighter rounded-sm group-hover:bg-[#2E2E2E] group-active:scale-95 transition-all duration-150 shadow-sm">
-            SH
-          </div>
+        {/* Left: Brand Wordmark (Icon Removed) */}
+        <a href="#hero" className="flex items-center gap-2 group">
           <div className="flex flex-col">
             <span className="font-['Space_Grotesk'] font-bold text-sm tracking-tight text-[#0A0A0A] uppercase group-hover:text-[#2E2E2E] transition-colors">
-              Smart Horizon
+              Vox
             </span>
             <span className="text-[9px] font-mono font-semibold tracking-widest text-[#6B6B6B] uppercase">
-              Forensic Acoustic Intel
+              Voice made easy
             </span>
           </div>
         </a>

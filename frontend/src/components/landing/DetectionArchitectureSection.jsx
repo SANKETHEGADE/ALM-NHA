@@ -19,7 +19,7 @@ export function DetectionArchitectureSection() {
             </h2>
           </div>
           <p className="text-sm font-sans text-[#6B6B6B] max-w-md leading-relaxed">
-            Standard keyword systems create unbearable false alarm fatigue. Smart Horizon correlates intent, biometrics, and acoustic physics.
+            Standard keyword systems create unbearable false alarm fatigue. Vox correlates intent, biometrics, and acoustic physics.
           </p>
         </div>
 
@@ -63,11 +63,11 @@ export function DetectionArchitectureSection() {
             </div>
           </div>
 
-          {/* Right: Smart Horizon Multimodal Standard */}
+          {/* Right: Vox Multimodal Standard */}
           <div className="bg-[#0A0A0A] text-white border border-[#0A0A0A] rounded-xl p-8 flex flex-col gap-6 shadow-xl">
             <div className="flex items-center justify-between pb-4 border-b border-[#2E2E2E]">
               <span className="text-xs font-mono font-bold text-white uppercase">
-                Smart Horizon Standard
+                Vox Standard
               </span>
               <span className="px-2 py-0.5 rounded bg-white text-[#0A0A0A] font-mono text-[10px] font-bold">
                 MULTIMODAL FUSION

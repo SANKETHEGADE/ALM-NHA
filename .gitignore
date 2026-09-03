@@ -22,3 +22,19 @@ yarn-error.log*
 Thumbs.db
 .vscode/
 .idea/
+
+# ML Datasets, Weights & Media
+datasets/
+data/
+checkpoints/
+*.pt
+*.pth
+*.bin
+*.safetensors
+*.wav
+*.mp3
+*.flac
+*.zip
+*.tar
+*.tgz
+

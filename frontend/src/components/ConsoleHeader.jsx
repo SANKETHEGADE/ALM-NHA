@@ -1,19 +1,20 @@
-import React from 'react';
-import { Cpu, Activity } from 'lucide-react';
+import React, { useState } from 'react';
+import { MoreHorizontal, Info } from 'lucide-react';
 
 /**
- * Stage 3: Console Header
- * Typographic harmony with landing page: Space Grotesk display headers, JetBrains Mono tracking-wider metadata.
+ * ChatGPT-style Slim Top Header
+ * Consolidates session info into a slim bar with session title and a minimal "..." menu for metadata.
  */
 export function ConsoleHeader({ activeSession }) {
+  const [showMetadataMenu, setShowMetadataMenu] = useState(false);
+
   const formatDateTime = (isoString) => {
     try {
       return new Date(isoString).toLocaleString([], {
         month: 'short',
         day: 'numeric',
         hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
+        minute: '2-digit'
       });
     } catch (e) {
       return 'Active';
@@ -21,46 +22,51 @@ export function ConsoleHeader({ activeSession }) {
   };
 
   return (
-    <header className="h-16 px-6 bg-gradient-to-r from-[#121215] via-[#151518] to-[#121215] border-b border-white/[0.08] flex items-center justify-between shrink-0 shadow-sm z-10 select-none">
-      {/* Session Title & Forensic Metadata */}
-      <div className="flex items-center gap-3.5 min-w-0">
-        <div className="flex flex-col min-w-0 gap-0.5">
-          <div className="flex items-center gap-2.5">
-            <h2 className="font-['Space_Grotesk'] text-sm sm:text-base font-bold text-white tracking-tight uppercase truncate">
-              {activeSession?.label || 'Active Forensic Session'}
-            </h2>
-            <span className="px-2 py-0.5 rounded-full bg-white/[0.06] border border-white/[0.12] text-[10px] font-mono font-bold tracking-wider text-neutral-300 shrink-0 shadow-2xs">
-              ID: {activeSession?.id || 'sess_active'}
-            </span>
-          </div>
-          <span className="text-[10px] font-mono font-medium tracking-wider text-neutral-400 uppercase flex items-center gap-1.5">
-            <span>Captured:</span>
-            <span className="text-neutral-200">{formatDateTime(activeSession?.createdAt)}</span>
-          </span>
-        </div>
+    <header className="h-12 px-5 bg-[#121212] border-b border-[#262626] flex items-center justify-between shrink-0 select-none relative">
+      {/* Session Title */}
+      <div className="flex items-center gap-2 min-w-0">
+        <h2 className="text-sm font-medium text-[#ececec] truncate">
+          {activeSession?.label || 'New Forensic Session'}
+        </h2>
       </div>
 
-      {/* Top Status Bar: Matching Landing Page Pill Style */}
-      <div className="flex items-center gap-2.5">
-        {/* Telemetry Status (Green Accent Only) */}
-        <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.1] text-xs font-mono shadow-xs backdrop-blur-xs">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.7)]" />
-          </span>
-          <span className="text-[10px] font-mono font-bold tracking-wider text-neutral-200 uppercase">
-            TELEMETRY: CONNECTED
-          </span>
-        </div>
+      {/* Right: Minimal "..." Menu */}
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setShowMetadataMenu((prev) => !prev)}
+          className="p-1.5 rounded-lg text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#181818] transition-colors cursor-pointer"
+          title="Session Metadata"
+        >
+          <MoreHorizontal className="w-4 h-4" />
+        </button>
 
-        {/* Engine Spec Pill (Monochrome) */}
-        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.1] text-xs font-mono text-neutral-400 shadow-xs">
-          <Cpu className="w-3.5 h-3.5 text-neutral-400" />
-          <span className="text-[10px] font-mono font-semibold tracking-wider text-neutral-300 uppercase">
-            MULTIMODAL FUSION 2026.4
-          </span>
-        </div>
+        {showMetadataMenu && (
+          <div className="absolute right-0 mt-2 w-64 bg-[#181818] border border-[#262626] rounded-xl p-3 shadow-xl z-50 text-xs text-[#ececec] flex flex-col gap-2">
+            <div className="flex items-center gap-2 pb-2 border-b border-[#262626] text-[#8e8ea0] font-medium">
+              <Info className="w-3.5 h-3.5" />
+              <span>Session Metadata</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#8e8ea0]">Session ID:</span>
+              <span className="font-mono text-[11px] text-[#ececec]">{activeSession?.id || 'sess_active'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#8e8ea0]">Captured:</span>
+              <span>{formatDateTime(activeSession?.createdAt)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#8e8ea0]">Telemetry:</span>
+              <span className="text-emerald-400 font-medium">Connected</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#8e8ea0]">Engine Spec:</span>
+              <span>Multimodal Fusion 2026.4</span>
+            </div>
+          </div>
+        )}
       </div>
     </header>
   );
 }
+
