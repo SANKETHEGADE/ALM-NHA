@@ -24,7 +24,12 @@ Thumbs.db
 .idea/
 
 # ML Datasets, Weights & Media
-datasets/
+datasets/*
+!datasets/manifests/
+!datasets/manifests/**
+ml-service/datasets/*
+!ml-service/datasets/manifests/
+!ml-service/datasets/manifests/**
 data/
 checkpoints/
 *.pt
@@ -37,4 +42,11 @@ checkpoints/
 *.zip
 *.tar
 *.tgz
+
+# Python cache & test artifacts
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+evaluation/test_*.json
 
