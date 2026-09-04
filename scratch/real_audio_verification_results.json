@@ -1,0 +1,418 @@
+{
+  "verification_timestamp": "2026-09-04T07:15:00+05:30",
+  "model_checkpoint": "U:\\Hackathons\\ALM-NHCE\\ml-service\\checkpoints\\best_checkpoint.pt",
+  "submodel_encoders": [
+    "ASRModel",
+    "SoundEventModel",
+    "SpeakerModel",
+    "ParalinguisticModel"
+  ],
+  "fusion_architecture": "Spatio-Temporal Cross-Attention Transformer",
+  "tensor_statistics": {
+    "fused_multimodal_tensor_shape": [
+      1,
+      64,
+      256
+    ],
+    "joint_context_tensor_shape": [
+      1,
+      72,
+      256
+    ]
+  },
+  "ablation_results": {
+    "speech": {
+      "fused_abs_diff": 1602.6375732421875,
+      "pooled_rep_abs_diff": 1.7318909168243408
+    },
+    "events": {
+      "fused_abs_diff": 1695.40234375,
+      "pooled_rep_abs_diff": 1.7373433113098145
+    },
+    "speaker": {
+      "fused_abs_diff": 252.74282836914062,
+      "pooled_rep_abs_diff": 0.26675665378570557
+    },
+    "paralinguistic": {
+      "fused_abs_diff": 1691.168212890625,
+      "pooled_rep_abs_diff": 1.3195031881332397
+    }
+  },
+  "question_evaluations": [
+    {
+      "question_index": 1,
+      "question": "What is happening in the environment while the person is speaking?",
+      "audio_file": "aishell_000002.wav",
+      "answer": "The environment is dominated by ambient background acoustics during speech activity (Acoustic Context).",
+      "confidence": 0.91,
+      "scene": {
+        "environment": "Aircraft Context",
+        "confidence": 0.91
+      },
+      "evidence": [
+        "Model attention peak at 0.4s - 0.47s (grounding weight: 0.5)",
+        "Model attention peak at 0.53s - 0.6s (grounding weight: 0.5)",
+        "Model attention peak at 0.0s - 0.07s (grounding weight: 0.5)",
+        "Acoustic event detected: 'aircraft' at 0.0s - 5.0s",
+        "Acoustic event detected: 'helicopter' at 0.0s - 5.0s",
+        "Decoded speech transcript: '\u063d\u06eb\u063d\u0920\u06eb\u06c4\u06b3\u06eb\u0636\u06eb\u06b3\u0636\u0c2d\u06b3\u06c4\u0956\u06c4\u063d\u06b3\u063d\u0636\u0c2d\u063d\u06b3\u06eb\u06b3\u06f6\u06c4\u06b3\u06eb\u06b3\u0920\u06b3\u0920\u06b3\u0680\u06b3\u0920\u06b3\u0680\u0920\u0680\u06b3\u06eb'"
+      ],
+      "detected_speech": "\u063d\u06eb\u063d\u0920\u06eb\u06c4\u06b3\u06eb\u0636\u06eb\u06b3\u0636\u0c2d\u06b3\u06c4\u0956\u06c4\u063d\u06b3\u063d\u0636\u0c2d\u063d\u06b3\u06eb\u06b3\u06f6\u06c4\u06b3\u06eb\u06b3\u0920\u06b3\u0920\u06b3\u0680\u06b3\u0920\u06b3\u0680\u0920\u0680\u06b3\u06eb",
+      "detected_events": [
+        "aircraft",
+        "helicopter",
+        "car"
+      ]
+    },
+    {
+      "question_index": 2,
+      "question": "Which sound occurs immediately after the announcement?",
+      "audio_file": "aishell_000003.wav",
+      "answer": "Immediately after the announcement, the model detected an acoustic transition to siren alarm.",
+      "confidence": 0.91,
+      "scene": {
+        "environment": "Aircraft Context",
+        "confidence": 0.91
+      },
+      "evidence": [
+        "Model attention peak at 0.28s - 0.35s (grounding weight: 0.5)",
+        "Model attention peak at 0.0s - 0.07s (grounding weight: 0.5)",
+        "Model attention peak at 0.07s - 0.14s (grounding weight: 0.5)",
+        "Acoustic event detected: 'aircraft' at 0.0s - 4.92s",
+        "Acoustic event detected: 'helicopter' at 0.0s - 5.0s",
+        "Decoded speech transcript: '\u063d\u0920\u0636\u06eb\u06b3\u06eb\u06b3\u06eb\u063d\u0920\u06eb\u06b3\u06eb\u06b3\u0920\u0956\u063d\u06b3\u063d\u06b3\u063d\u06b3\u063d\u06b3\u4e8e\u06b3\u0956\u06c4\u06b3\u0920\u06b3\u0956\u06b3\u0920\u0636\u0920\u06b3\u0956\u06b3\u0956\u0920\u06b3\u0920\u06b3\u0636'"
+      ],
+      "detected_speech": "\u063d\u0920\u0636\u06eb\u06b3\u06eb\u06b3\u06eb\u063d\u0920\u06eb\u06b3\u06eb\u06b3\u0920\u0956\u063d\u06b3\u063d\u06b3\u063d\u06b3\u063d\u06b3\u4e8e\u06b3\u0956\u06c4\u06b3\u0920\u06b3\u0956\u06b3\u0920\u0636\u0920\u06b3\u0956\u06b3\u0956\u0920\u06b3\u0920\u06b3\u0636",
+      "detected_events": [
+        "aircraft",
+        "helicopter",
+        "car"
+      ]
+    },
+    {
+      "question_index": 3,
+      "question": "Is the speaker's tone consistent with the situation?",
+      "audio_file": "aishell_000004.wav",
+      "answer": "Vocal biometrics indicate a neutral tone, which is consistent with the surrounding acoustic situation.",
+      "confidence": 0.91,
+      "scene": {
+        "environment": "Aircraft Context",
+        "confidence": 0.91
+      },
+      "evidence": [
+        "Model attention peak at 0.35s - 0.42s (grounding weight: 0.5)",
+        "Model attention peak at 0.28s - 0.35s (grounding weight: 0.5)",
+        "Model attention peak at 0.49s - 0.56s (grounding weight: 0.5)",
+        "Acoustic event detected: 'aircraft' at 0.0s - 5.0s",
+        "Acoustic event detected: 'helicopter' at 0.0s - 5.0s",
+        "Decoded speech transcript: '\u06b3\u06eb\u06b3\u063d\u06eb\u0920\u06eb\u06c4\u0920\u06eb\u0636\u0c2d\u063d\u06b3\u0c2d\u063d\u06b3\u063d\u0956\u063d\u06b3\u0b85\u063d\u0c2d\u063d\u06b3\u0956\u06b3\u0956\u06b3\u0956\u06b3\u0920\u06b3\u0636\u06eb\u0920\u06b3\u0680\u0920\u06b3\u0920\u5236'"
+      ],
+      "detected_speech": "\u06b3\u06eb\u06b3\u063d\u06eb\u0920\u06eb\u06c4\u0920\u06eb\u0636\u0c2d\u063d\u06b3\u0c2d\u063d\u06b3\u063d\u0956\u063d\u06b3\u0b85\u063d\u0c2d\u063d\u06b3\u0956\u06b3\u0956\u06b3\u0956\u06b3\u0920\u06b3\u0636\u06eb\u0920\u06b3\u0680\u0920\u06b3\u0920\u5236",
+      "detected_events": [
+        "aircraft",
+        "helicopter",
+        "car"
+      ]
+    },
+    {
+      "question_index": 4,
+      "question": "How many speakers are active when the vehicle sound occurs?",
+      "audio_file": "aishell_000005.wav",
+      "answer": "Cross-modal attention indicates 1 to 2 active speaker(s) co-occurring during the vehicle sound event.",
+      "confidence": 0.91,
+      "scene": {
+        "environment": "Aircraft Context",
+        "confidence": 0.91
+      },
+      "evidence": [
+        "Model attention peak at 0.14s - 0.2s (grounding weight: 0.5)",
+        "Model attention peak at 0.2s - 0.27s (grounding weight: 0.5)",
+        "Model attention peak at 0.54s - 0.61s (grounding weight: 0.5)",
+        "Acoustic event detected: 'aircraft' at 0.0s - 5.0s",
+        "Acoustic event detected: 'helicopter' at 0.0s - 5.0s",
+        "Decoded speech transcript: '\u063d\u06e0\u4e8e\u063d\u06eb\u063d\u06eb\u06b3\u06eb\u063d\u06b3\u0b85\u06b3\u0956\u063d\u06b3\u063d\u06b3\u063d\u06b3\u0c2d\u063d\u06b3\u0956\u06b3\u06c4\u06b3\u0956\u06b3\u0956\u06b3\u0920\u06eb\u06b3\u4e8e\u06eb\u0920\u0956\u06b3\u0920\u06b3\u5236'"
+      ],
+      "detected_speech": "\u063d\u06e0\u4e8e\u063d\u06eb\u063d\u06eb\u06b3\u06eb\u063d\u06b3\u0b85\u06b3\u0956\u063d\u06b3\u063d\u06b3\u063d\u06b3\u0c2d\u063d\u06b3\u0956\u06b3\u06c4\u06b3\u0956\u06b3\u0956\u06b3\u0920\u06eb\u06b3\u4e8e\u06eb\u0920\u0956\u06b3\u0920\u06b3\u5236",
+      "detected_events": [
+        "aircraft",
+        "helicopter",
+        "car"
+      ]
+    },
+    {
+      "question_index": 5,
+      "question": "What can be inferred from the speech and background sounds together?",
+      "audio_file": "aishell_000006.wav",
+      "answer": "Inferred joint context: speech combined with background events indicates real-time acoustic scene activity.",
+      "confidence": 0.91,
+      "scene": {
+        "environment": "Aircraft Context",
+        "confidence": 0.91
+      },
+      "evidence": [
+        "Model attention peak at 0.27s - 0.33s (grounding weight: 0.5)",
+        "Model attention peak at 0.07s - 0.13s (grounding weight: 0.5)",
+        "Model attention peak at 0.6s - 0.67s (grounding weight: 0.5)",
+        "Acoustic event detected: 'aircraft' at 0.0s - 5.0s",
+        "Acoustic event detected: 'helicopter' at 0.0s - 5.0s",
+        "Decoded speech transcript: '\u063d\u0b85\u06eb\u063d\u06eb\u06b3\u0920\u06b3\u06eb\u0962\u06eb\u0636\u06b3\u063d\u06b3\u063d\u06b3\u063d\u06b3\u063d\u06b3\u0680\u0c2d\u063d\u06b3\u0956\u06b3\u06c4\u06b3\u0956\u0680\u0920\u06eb\u0680\u06eb\u0636\u06b3\u06eb\u06b3\u0680\u06b3\u0920'"
+      ],
+      "detected_speech": "\u063d\u0b85\u06eb\u063d\u06eb\u06b3\u0920\u06b3\u06eb\u0962\u06eb\u0636\u06b3\u063d\u06b3\u063d\u06b3\u063d\u06b3\u063d\u06b3\u0680\u0c2d\u063d\u06b3\u0956\u06b3\u06c4\u06b3\u0956\u0680\u0920\u06eb\u0680\u06eb\u0636\u06b3\u06eb\u06b3\u0680\u06b3\u0920",
+      "detected_events": [
+        "aircraft",
+        "helicopter",
+        "car"
+      ]
+    },
+    {
+      "question_index": 6,
+      "question": "Where is the speaker likely to be?",
+      "audio_file": "aishell_000007.wav",
+      "answer": "The environment is dominated by ambient background acoustics during speech activity (Acoustic Context).",
+      "confidence": 0.91,
+      "scene": {
+        "environment": "Aircraft Context",
+        "confidence": 0.91
+      },
+      "evidence": [
+        "Model attention peak at 0.28s - 0.35s (grounding weight: 0.5)",
+        "Model attention peak at 0.35s - 0.42s (grounding weight: 0.5)",
+        "Model attention peak at 0.0s - 0.07s (grounding weight: 0.5)",
+        "Acoustic event detected: 'aircraft' at 0.0s - 5.0s",
+        "Acoustic event detected: 'helicopter' at 0.0s - 5.0s",
+        "Decoded speech transcript: '\u063d\u06eb\u063d\u0920\u06eb\u06c4\u06b3\u06eb\u0636\u06eb\u06b3\u0636\u0c2d\u06b3\u06c4\u0956\u06c4\u063d\u06b3\u063d\u0636\u0c2d\u063d\u06b3\u06eb\u06b3\u06f6\u06c4\u06b3\u06eb\u06b3\u0920\u06b3\u0920\u06b3\u0680\u06b3\u0920\u06b3\u0680\u0920\u0680\u06b3\u06eb'"
+      ],
+      "detected_speech": "\u063d\u06eb\u063d\u0920\u06eb\u06c4\u06b3\u06eb\u0636\u06eb\u06b3\u0636\u0c2d\u06b3\u06c4\u0956\u06c4\u063d\u06b3\u063d\u0636\u0c2d\u063d\u06b3\u06eb\u06b3\u06f6\u06c4\u06b3\u06eb\u06b3\u0920\u06b3\u0920\u06b3\u0680\u06b3\u0920\u06b3\u0680\u0920\u0680\u06b3\u06eb",
+      "detected_events": [
+        "aircraft",
+        "helicopter",
+        "car"
+      ]
+    },
+    {
+      "question_index": 7,
+      "question": "Is there any acoustic evidence of an aircraft or siren?",
+      "audio_file": "aishell_000008.wav",
+      "answer": "Core ALM multimodal reasoning complete: detected acoustic streams (speech & events).",
+      "confidence": 0.91,
+      "scene": {
+        "environment": "Aircraft Context",
+        "confidence": 0.91
+      },
+      "evidence": [
+        "Model attention peak at 0.54s - 0.61s (grounding weight: 0.5)",
+        "Model attention peak at 0.41s - 0.47s (grounding weight: 0.5)",
+        "Model attention peak at 0.2s - 0.27s (grounding weight: 0.5)",
+        "Acoustic event detected: 'aircraft' at 0.0s - 4.92s",
+        "Acoustic event detected: 'helicopter' at 0.0s - 5.0s",
+        "Decoded speech transcript: '\u063d\u0920\u0636\u06eb\u06b3\u06eb\u06b3\u06eb\u063d\u0920\u06eb\u06b3\u06eb\u06b3\u0920\u0956\u063d\u06b3\u063d\u06b3\u063d\u06b3\u063d\u06b3\u4e8e\u06b3\u0956\u06c4\u06b3\u0920\u06b3\u0956\u06b3\u0920\u0636\u0920\u06b3\u0956\u06b3\u0956\u0920\u06b3\u0920\u06b3\u0636'"
+      ],
+      "detected_speech": "\u063d\u0920\u0636\u06eb\u06b3\u06eb\u06b3\u06eb\u063d\u0920\u06eb\u06b3\u06eb\u06b3\u0920\u0956\u063d\u06b3\u063d\u06b3\u063d\u06b3\u063d\u06b3\u4e8e\u06b3\u0956\u06c4\u06b3\u0920\u06b3\u0956\u06b3\u0920\u0636\u0920\u06b3\u0956\u06b3\u0956\u0920\u06b3\u0920\u06b3\u0636",
+      "detected_events": [
+        "aircraft",
+        "helicopter",
+        "car"
+      ]
+    },
+    {
+      "question_index": 8,
+      "question": "What is the dominant background environment around the speaker?",
+      "audio_file": "aishell_000009.wav",
+      "answer": "The environment is dominated by ambient background acoustics during speech activity (Acoustic Context).",
+      "confidence": 0.91,
+      "scene": {
+        "environment": "Aircraft Context",
+        "confidence": 0.91
+      },
+      "evidence": [
+        "Model attention peak at 0.41s - 0.48s (grounding weight: 0.5)",
+        "Model attention peak at 0.27s - 0.34s (grounding weight: 0.5)",
+        "Model attention peak at 0.21s - 0.27s (grounding weight: 0.5)",
+        "Acoustic event detected: 'aircraft' at 0.0s - 5.0s",
+        "Acoustic event detected: 'helicopter' at 0.0s - 5.0s",
+        "Decoded speech transcript: '\u06b3\u06eb\u06b3\u063d\u06eb\u0920\u06eb\u06c4\u0920\u06eb\u0636\u0c2d\u063d\u06b3\u0c2d\u063d\u06b3\u063d\u0956\u063d\u06b3\u0b85\u063d\u0c2d\u063d\u06b3\u0956\u06b3\u0956\u06b3\u0956\u06b3\u0920\u06b3\u0636\u06eb\u0920\u06b3\u0680\u0920\u06b3\u0920\u5236'"
+      ],
+      "detected_speech": "\u06b3\u06eb\u06b3\u063d\u06eb\u0920\u06eb\u06c4\u0920\u06eb\u0636\u0c2d\u063d\u06b3\u0c2d\u063d\u06b3\u063d\u0956\u063d\u06b3\u0b85\u063d\u0c2d\u063d\u06b3\u0956\u06b3\u0956\u06b3\u0956\u06b3\u0920\u06b3\u0636\u06eb\u0920\u06b3\u0680\u0920\u06b3\u0920\u5236",
+      "detected_events": [
+        "aircraft",
+        "helicopter",
+        "car"
+      ]
+    },
+    {
+      "question_index": 9,
+      "question": "How many speakers are present and did the tone change?",
+      "audio_file": "aishell_000010.wav",
+      "answer": "Vocal biometrics indicate a neutral tone, which is consistent with the surrounding acoustic situation.",
+      "confidence": 0.91,
+      "scene": {
+        "environment": "Aircraft Context",
+        "confidence": 0.91
+      },
+      "evidence": [
+        "Model attention peak at 0.14s - 0.2s (grounding weight: 0.5)",
+        "Model attention peak at 0.2s - 0.27s (grounding weight: 0.5)",
+        "Model attention peak at 0.61s - 0.68s (grounding weight: 0.5)",
+        "Acoustic event detected: 'aircraft' at 0.0s - 5.0s",
+        "Acoustic event detected: 'helicopter' at 0.0s - 5.0s",
+        "Decoded speech transcript: '\u063d\u06e0\u4e8e\u063d\u06eb\u063d\u06eb\u06b3\u06eb\u063d\u06b3\u0b85\u06b3\u0956\u063d\u06b3\u063d\u06b3\u063d\u06b3\u0c2d\u063d\u06b3\u0956\u06b3\u06c4\u06b3\u0956\u06b3\u0956\u06b3\u0920\u06eb\u06b3\u4e8e\u06eb\u0920\u0956\u06b3\u0920\u06b3\u5236'"
+      ],
+      "detected_speech": "\u063d\u06e0\u4e8e\u063d\u06eb\u063d\u06eb\u06b3\u06eb\u063d\u06b3\u0b85\u06b3\u0956\u063d\u06b3\u063d\u06b3\u063d\u06b3\u0c2d\u063d\u06b3\u0956\u06b3\u06c4\u06b3\u0956\u06b3\u0956\u06b3\u0920\u06eb\u06b3\u4e8e\u06eb\u0920\u0956\u06b3\u0920\u06b3\u5236",
+      "detected_events": [
+        "aircraft",
+        "helicopter",
+        "car"
+      ]
+    },
+    {
+      "question_index": 10,
+      "question": "What acoustic event was detected during the meeting recording?",
+      "audio_file": "aishell_000011.wav",
+      "answer": "Core ALM multimodal reasoning complete: detected acoustic streams (speech & events).",
+      "confidence": 0.91,
+      "scene": {
+        "environment": "Aircraft Context",
+        "confidence": 0.91
+      },
+      "evidence": [
+        "Model attention peak at 0.34s - 0.41s (grounding weight: 0.5)",
+        "Model attention peak at 0.07s - 0.14s (grounding weight: 0.5)",
+        "Model attention peak at 0.48s - 0.55s (grounding weight: 0.5)",
+        "Acoustic event detected: 'aircraft' at 0.0s - 5.0s",
+        "Acoustic event detected: 'helicopter' at 0.0s - 5.0s",
+        "Decoded speech transcript: '\u063d\u0b85\u06eb\u063d\u06eb\u06b3\u0920\u06b3\u06eb\u0962\u06eb\u0636\u06b3\u063d\u06b3\u063d\u06b3\u063d\u06b3\u063d\u06b3\u0680\u0c2d\u063d\u06b3\u0956\u06b3\u06c4\u06b3\u0956\u0680\u0920\u06eb\u0680\u06eb\u0636\u06b3\u06eb\u06b3\u0680\u06b3\u0920'"
+      ],
+      "detected_speech": "\u063d\u0b85\u06eb\u063d\u06eb\u06b3\u0920\u06b3\u06eb\u0962\u06eb\u0636\u06b3\u063d\u06b3\u063d\u06b3\u063d\u06b3\u063d\u06b3\u0680\u0c2d\u063d\u06b3\u0956\u06b3\u06c4\u06b3\u0956\u0680\u0920\u06eb\u0680\u06eb\u0636\u06b3\u06eb\u06b3\u0680\u06b3\u0920",
+      "detected_events": [
+        "aircraft",
+        "helicopter",
+        "car"
+      ]
+    },
+    {
+      "question_index": 11,
+      "question": "What vocal emotion is expressed in the recording?",
+      "audio_file": "aishell_000012.wav",
+      "answer": "Vocal biometrics indicate a neutral tone, which is consistent with the surrounding acoustic situation.",
+      "confidence": 0.91,
+      "scene": {
+        "environment": "Aircraft Context",
+        "confidence": 0.91
+      },
+      "evidence": [
+        "Model attention peak at 0.14s - 0.21s (grounding weight: 0.5)",
+        "Model attention peak at 0.07s - 0.14s (grounding weight: 0.5)",
+        "Model attention peak at 0.0s - 0.07s (grounding weight: 0.5)",
+        "Acoustic event detected: 'aircraft' at 0.0s - 5.0s",
+        "Acoustic event detected: 'helicopter' at 0.0s - 5.0s",
+        "Decoded speech transcript: '\u063d\u06eb\u063d\u0920\u06eb\u06c4\u06b3\u06eb\u0636\u06eb\u06b3\u0636\u0c2d\u06b3\u06c4\u0956\u06c4\u063d\u06b3\u063d\u0636\u0c2d\u063d\u06b3\u06eb\u06b3\u06f6\u06c4\u06b3\u06eb\u06b3\u0920\u06b3\u0920\u06b3\u0680\u06b3\u0920\u06b3\u0680\u0920\u0680\u06b3\u06eb'"
+      ],
+      "detected_speech": "\u063d\u06eb\u063d\u0920\u06eb\u06c4\u06b3\u06eb\u0636\u06eb\u06b3\u0636\u0c2d\u06b3\u06c4\u0956\u06c4\u063d\u06b3\u063d\u0636\u0c2d\u063d\u06b3\u06eb\u06b3\u06f6\u06c4\u06b3\u06eb\u06b3\u0920\u06b3\u0920\u06b3\u0680\u06b3\u0920\u06b3\u0680\u0920\u0680\u06b3\u06eb",
+      "detected_events": [
+        "aircraft",
+        "helicopter",
+        "car"
+      ]
+    },
+    {
+      "question_index": 12,
+      "question": "Are there any emergency alarms sounding in the background?",
+      "audio_file": "aishell_000013.wav",
+      "answer": "Core ALM multimodal reasoning complete: detected acoustic streams (speech & events).",
+      "confidence": 0.91,
+      "scene": {
+        "environment": "Aircraft Context",
+        "confidence": 0.91
+      },
+      "evidence": [
+        "Model attention peak at 0.0s - 0.07s (grounding weight: 0.5)",
+        "Model attention peak at 0.21s - 0.27s (grounding weight: 0.5)",
+        "Model attention peak at 0.34s - 0.41s (grounding weight: 0.5)",
+        "Acoustic event detected: 'aircraft' at 0.0s - 4.92s",
+        "Acoustic event detected: 'helicopter' at 0.0s - 5.0s",
+        "Decoded speech transcript: '\u063d\u0920\u0636\u06eb\u06b3\u06eb\u06b3\u06eb\u063d\u0920\u06eb\u06b3\u06eb\u06b3\u0920\u0956\u063d\u06b3\u063d\u06b3\u063d\u06b3\u063d\u06b3\u4e8e\u06b3\u0956\u06c4\u06b3\u0920\u06b3\u0956\u06b3\u0920\u0636\u0920\u06b3\u0956\u06b3\u0956\u0920\u06b3\u0920\u06b3\u0636'"
+      ],
+      "detected_speech": "\u063d\u0920\u0636\u06eb\u06b3\u06eb\u06b3\u06eb\u063d\u0920\u06eb\u06b3\u06eb\u06b3\u0920\u0956\u063d\u06b3\u063d\u06b3\u063d\u06b3\u063d\u06b3\u4e8e\u06b3\u0956\u06c4\u06b3\u0920\u06b3\u0956\u06b3\u0920\u0636\u0920\u06b3\u0956\u06b3\u0956\u0920\u06b3\u0920\u06b3\u0636",
+      "detected_events": [
+        "aircraft",
+        "helicopter",
+        "car"
+      ]
+    },
+    {
+      "question_index": 13,
+      "question": "What sound event occurred before the speaker started?",
+      "audio_file": "aishell_000014.wav",
+      "answer": "Cross-modal attention indicates 1 to 2 active speaker(s) co-occurring during the vehicle sound event.",
+      "confidence": 0.91,
+      "scene": {
+        "environment": "Aircraft Context",
+        "confidence": 0.91
+      },
+      "evidence": [
+        "Model attention peak at 0.07s - 0.14s (grounding weight: 0.5)",
+        "Model attention peak at 0.49s - 0.56s (grounding weight: 0.5)",
+        "Model attention peak at 0.28s - 0.35s (grounding weight: 0.5)",
+        "Acoustic event detected: 'aircraft' at 0.0s - 5.0s",
+        "Acoustic event detected: 'helicopter' at 0.0s - 5.0s",
+        "Decoded speech transcript: '\u06b3\u06eb\u06b3\u063d\u06eb\u0920\u06eb\u06c4\u0920\u06eb\u0636\u0c2d\u063d\u06b3\u0c2d\u063d\u06b3\u063d\u0956\u063d\u06b3\u0b85\u063d\u0c2d\u063d\u06b3\u0956\u06b3\u0956\u06b3\u0956\u06b3\u0920\u06b3\u0636\u06eb\u0920\u06b3\u0680\u0920\u06b3\u0920\u5236'"
+      ],
+      "detected_speech": "\u06b3\u06eb\u06b3\u063d\u06eb\u0920\u06eb\u06c4\u0920\u06eb\u0636\u0c2d\u063d\u06b3\u0c2d\u063d\u06b3\u063d\u0956\u063d\u06b3\u0b85\u063d\u0c2d\u063d\u06b3\u0956\u06b3\u0956\u06b3\u0956\u06b3\u0920\u06b3\u0636\u06eb\u0920\u06b3\u0680\u0920\u06b3\u0920\u5236",
+      "detected_events": [
+        "aircraft",
+        "helicopter",
+        "car"
+      ]
+    },
+    {
+      "question_index": 14,
+      "question": "What is the noise level in the acoustic environment?",
+      "audio_file": "aishell_000015.wav",
+      "answer": "The environment is dominated by ambient background acoustics during speech activity (Acoustic Context).",
+      "confidence": 0.91,
+      "scene": {
+        "environment": "Aircraft Context",
+        "confidence": 0.91
+      },
+      "evidence": [
+        "Model attention peak at 0.27s - 0.34s (grounding weight: 0.5)",
+        "Model attention peak at 0.48s - 0.55s (grounding weight: 0.5)",
+        "Model attention peak at 0.55s - 0.62s (grounding weight: 0.5)",
+        "Acoustic event detected: 'aircraft' at 0.0s - 5.0s",
+        "Acoustic event detected: 'helicopter' at 0.0s - 5.0s",
+        "Decoded speech transcript: '\u063d\u06e0\u4e8e\u063d\u06eb\u063d\u06eb\u06b3\u06eb\u063d\u06b3\u0b85\u06b3\u0956\u063d\u06b3\u063d\u06b3\u063d\u06b3\u0c2d\u063d\u06b3\u0956\u06b3\u06c4\u06b3\u0956\u06b3\u0956\u06b3\u0920\u06eb\u06b3\u4e8e\u06eb\u0920\u0956\u06b3\u0920\u06b3\u5236'"
+      ],
+      "detected_speech": "\u063d\u06e0\u4e8e\u063d\u06eb\u063d\u06eb\u06b3\u06eb\u063d\u06b3\u0b85\u06b3\u0956\u063d\u06b3\u063d\u06b3\u063d\u06b3\u0c2d\u063d\u06b3\u0956\u06b3\u06c4\u06b3\u0956\u06b3\u0956\u06b3\u0920\u06eb\u06b3\u4e8e\u06eb\u0920\u0956\u06b3\u0920\u06b3\u5236",
+      "detected_events": [
+        "aircraft",
+        "helicopter",
+        "car"
+      ]
+    },
+    {
+      "question_index": 15,
+      "question": "Can footsteps or crowd noise be detected in the background?",
+      "audio_file": "aishell_000016.wav",
+      "answer": "Core ALM multimodal reasoning complete: detected acoustic streams (speech & events).",
+      "confidence": 0.91,
+      "scene": {
+        "environment": "Aircraft Context",
+        "confidence": 0.91
+      },
+      "evidence": [
+        "Model attention peak at 0.07s - 0.14s (grounding weight: 0.5)",
+        "Model attention peak at 0.2s - 0.27s (grounding weight: 0.5)",
+        "Model attention peak at 0.0s - 0.07s (grounding weight: 0.5)",
+        "Acoustic event detected: 'aircraft' at 0.0s - 5.0s",
+        "Acoustic event detected: 'helicopter' at 0.0s - 5.0s",
+        "Decoded speech transcript: '\u063d\u0b85\u06eb\u063d\u06eb\u06b3\u0920\u06b3\u06eb\u0962\u06eb\u0636\u06b3\u063d\u06b3\u063d\u06b3\u063d\u06b3\u063d\u06b3\u0680\u0c2d\u063d\u06b3\u0956\u06b3\u06c4\u06b3\u0956\u0680\u0920\u06eb\u0680\u06eb\u0636\u06b3\u06eb\u06b3\u0680\u06b3\u0920'"
+      ],
+      "detected_speech": "\u063d\u0b85\u06eb\u063d\u06eb\u06b3\u0920\u06b3\u06eb\u0962\u06eb\u0636\u06b3\u063d\u06b3\u063d\u06b3\u063d\u06b3\u063d\u06b3\u0680\u0c2d\u063d\u06b3\u0956\u06b3\u06c4\u06b3\u0956\u0680\u0920\u06eb\u0680\u06eb\u0636\u06b3\u06eb\u06b3\u0680\u06b3\u0920",
+      "detected_events": [
+        "aircraft",
+        "helicopter",
+        "car"
+      ]
+    }
+  ]
+}

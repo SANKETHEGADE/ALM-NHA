@@ -30,12 +30,16 @@ class ALMInferencePipeline:
 
     def load_audio(self, audio_source) -> torch.Tensor:
         """
-        Loads raw audio waveform or audio tensor into PyTorch Tensor.
+        Loads raw audio waveform or audio tensor into PyTorch Mel-Spectrogram Tensor (1, 80, T_frames).
         """
         if isinstance(audio_source, torch.Tensor):
             tensor = audio_source.to(self.device)
             if tensor.ndim == 1:
                 tensor = tensor.unsqueeze(0)
+            if tensor.ndim == 2 and tensor.size(1) > 1000:
+                tensor = self.model.audio_encoder.extract_mel_spectrogram(tensor)
+            if tensor.ndim == 4 and tensor.size(1) == 1:
+                tensor = tensor.squeeze(1)
             return tensor
 
         if isinstance(audio_source, (bytes, bytearray)):
@@ -53,11 +57,15 @@ class ALMInferencePipeline:
                 tensor = torch.tensor(data, dtype=torch.float32, device=self.device)
                 if tensor.ndim == 1:
                     tensor = tensor.unsqueeze(0)
+                if tensor.ndim == 2 and tensor.size(1) > 1000:
+                    tensor = self.model.audio_encoder.extract_mel_spectrogram(tensor)
+                if tensor.ndim == 4 and tensor.size(1) == 1:
+                    tensor = tensor.squeeze(1)
                 return tensor
             except Exception as err:
                 print(f"[ALMInferencePipeline] Soundfile load note: {err}")
 
-        # Fallback tensor
+        # Fallback tensor (1, 80, 128)
         return torch.randn(1, 80, 128, device=self.device)
 
     def encode_latent_multimodal(self, audio_source, disable_modalities: list = None) -> torch.Tensor:
@@ -95,17 +103,42 @@ class ALMInferencePipeline:
         speakers_data = outputs.get("speakers", {})
         para_data = outputs.get("paralinguistic", {})
         evidence_scores = outputs.get("evidence_scores", None)
-        fused_tensor = outputs.get("fused_multimodal_tensor", None)
+        answer_logits = outputs.get("answer_logits", None)
 
-        answer_text, evidence_list, scene_env = self._synthesize_from_latent(
-            question=question,
-            speech_data=speech_data,
-            events_data=events_data,
-            speakers_data=speakers_data,
-            para_data=para_data,
-            evidence_scores=evidence_scores,
-            fused_tensor=fused_tensor
-        )
+        # Decode natural language answer directly from model's predicted token logits
+        if answer_logits is not None:
+            answer_text = self.model.reasoning_model.decode_answer_from_logits(answer_logits, question_text=question)
+        else:
+            answer_text = f"Core ALM multimodal reasoning complete for question: '{question}'."
+
+        # Extract evidence timestamps directly from attention score peaks
+        evidence_list = []
+        if evidence_scores is not None and evidence_scores.numel() > 0:
+            top_k_indices = torch.topk(evidence_scores[0], min(3, evidence_scores.size(1))).indices.cpu().tolist()
+            duration_per_token = 5.0 / max(1, evidence_scores.size(1))
+            for idx in top_k_indices:
+                t_start = round(idx * duration_per_token, 2)
+                t_end = round((idx + 1) * duration_per_token, 2)
+                score = round(float(evidence_scores[0, idx].cpu().item()), 2)
+                evidence_list.append(f"Model attention peak at {t_start}s - {t_end}s (grounding weight: {score})")
+
+        events_list = events_data.get("events", []) if isinstance(events_data, dict) else events_data
+        for ev in events_list[:2]:
+            if isinstance(ev, dict):
+                lbl = ev.get("label") or ev.get("event") or "event"
+                st = ev.get("start", 0.0)
+                en = ev.get("end", 5.0)
+                evidence_list.append(f"Acoustic event detected: '{lbl}' at {st}s - {en}s")
+
+        transcript = speech_data.get("text", "") if isinstance(speech_data, dict) else str(speech_data)
+        if transcript:
+            evidence_list.append(f"Decoded speech transcript: '{transcript}'")
+
+        scene_env = "Acoustic Environment"
+        if isinstance(events_list, list) and len(events_list) > 0:
+            lbl = events_list[0].get("label") if isinstance(events_list[0], dict) else str(events_list[0])
+            if lbl:
+                scene_env = f"{lbl.title()} Context"
 
         formatted_events = events_data.get("events", events_data) if isinstance(events_data, dict) else events_data
         formatted_speakers = speakers_data.get("speakers", speakers_data.get("segments", [])) if isinstance(speakers_data, dict) else speakers_data
@@ -114,7 +147,7 @@ class ALMInferencePipeline:
             "answer": answer_text,
             "confidence": confidence_val,
             "speech": {
-                "transcript": speech_data.get("text", "") if isinstance(speech_data, dict) else str(speech_data),
+                "transcript": transcript,
                 "language": speech_data.get("language", language_hint) if isinstance(speech_data, dict) else language_hint,
                 "confidence": speech_data.get("confidence", 0.90) if isinstance(speech_data, dict) else 0.90,
                 "word_timestamps": speech_data.get("word_timestamps", []) if isinstance(speech_data, dict) else []
@@ -128,65 +161,3 @@ class ALMInferencePipeline:
             },
             "evidence": evidence_list
         }
-
-    def _synthesize_from_latent(self, question: str, speech_data: dict, events_data,
-                               speakers_data: dict, para_data: dict, evidence_scores: torch.Tensor,
-                               fused_tensor: torch.Tensor):
-        transcript = speech_data.get("text", "") if isinstance(speech_data, dict) else str(speech_data)
-        
-        events_list = events_data.get("events", []) if isinstance(events_data, dict) else events_data
-        if not isinstance(events_list, list):
-            events_list = []
-
-        detected_event_names = []
-        for e in events_list:
-            if isinstance(e, dict):
-                lbl = e.get("label") or e.get("event") or ""
-                if lbl:
-                    detected_event_names.append(lbl)
-            elif isinstance(e, str):
-                detected_event_names.append(e)
-
-        speaker_count = speakers_data.get("speaker_count", 1) if isinstance(speakers_data, dict) else 1
-        primary_emotion = para_data.get("emotion", para_data.get("primary_emotion", "neutral")) if isinstance(para_data, dict) else "neutral"
-        arousal = para_data.get("arousal", "low") if isinstance(para_data, dict) else "low"
-
-        evidence_list = []
-
-        # Grounding evidence calculated directly from latent cross-attention evidence tensor scores
-        if evidence_scores is not None and evidence_scores.numel() > 0:
-            top_k_indices = torch.topk(evidence_scores[0], min(3, evidence_scores.size(1))).indices.cpu().tolist()
-            duration_per_token = 5.0 / max(1, evidence_scores.size(1))
-            for idx in top_k_indices:
-                t_start = round(idx * duration_per_token, 2)
-                t_end = round((idx + 1) * duration_per_token, 2)
-                score = round(float(evidence_scores[0, idx].cpu().item()), 2)
-                evidence_list.append(f"Model attention peak at {t_start}s - {t_end}s (grounding weight: {score})")
-
-        for ev in events_list[:2]:
-            if isinstance(ev, dict):
-                lbl = ev.get("label") or ev.get("event") or "event"
-                st = ev.get("start", 0.0)
-                en = ev.get("end", 5.0)
-                evidence_list.append(f"Acoustic event detected: '{lbl}' at {st}s - {en}s")
-
-        if transcript:
-            evidence_list.append(f"Decoded speech transcript: '{transcript}'")
-
-        if detected_event_names:
-            main_event = detected_event_names[0]
-            scene_env = f"{main_event.title()} Context"
-        else:
-            scene_env = "Acoustic Environment"
-
-        q_lower = question.lower()
-        if "where" in q_lower or "location" in q_lower or "scene" in q_lower:
-            answer = f"Based on the acoustic feature analysis, the audio exhibits {', '.join(detected_event_names) if detected_event_names else 'ambient room acoustics'} alongside speech transcript ('{transcript}')."
-        elif "how many" in q_lower or "speaker" in q_lower:
-            answer = f"The speaker diarization module detected {speaker_count} speaker(s) across the recording timeline."
-        elif "tone" in q_lower or "emotion" in q_lower or "stress" in q_lower:
-            answer = f"Paralinguistic biometrics indicate a primary vocal emotion of {primary_emotion} with {arousal} arousal."
-        else:
-            answer = f"Core ALM reasoning completed: processed speech ('{transcript}') and {len(detected_event_names)} acoustic event stream(s)."
-
-        return answer, evidence_list, scene_env
