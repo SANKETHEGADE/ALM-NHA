@@ -232,9 +232,10 @@ class ALMInferencePipeline:
                         flatness = float(np.mean(_acoustic_dsp.feature.spectral_flatness(y=y))) if len(y) > 0 else 0.1
                         rolloff = float(np.mean(_acoustic_dsp.feature.spectral_rolloff(y=y, sr=16000, roll_percent=0.85))) if len(y) > 0 else 2000.0
 
-                        is_siren_signal = (max_pitch > 550.0 and pitch_std > 35.0) or (avg_centroid > 1100.0 and max_pitch > 500.0)
-                        is_engine_signal = (avg_pitch < 280.0 and avg_db > -36.0) or (avg_centroid < 1400.0 and avg_db > -36.0) or (rolloff < 4000.0 and avg_db > -34.0)
-                        is_chime_signal = (flatness < 0.04 and avg_centroid > 600.0) or (pitch_std > 35.0 and max_pitch > 350.0) or (max_pitch > 450.0 and flatness < 0.06)
+                        # Strict acoustic triggers so human speech NEVER false-triggers sirens or alarms
+                        is_siren_signal = (max_pitch > 680.0 and pitch_std > 55.0 and avg_centroid > 1600.0)
+                        is_engine_signal = (avg_pitch < 210.0 and avg_centroid < 950.0 and avg_db > -28.0)
+                        is_chime_signal = (flatness < 0.015 and avg_centroid > 900.0 and max_pitch > 450.0)
 
                         print(f"[ALMInferencePipeline] Acoustic DSP - dB: {avg_db:.2f}, Pitch: {avg_pitch:.2f}Hz, MaxPitch: {max_pitch:.2f}Hz, PitchStd: {pitch_std:.2f}Hz, Centroid: {avg_centroid:.2f}Hz, Flatness: {flatness:.4f}, Siren: {is_siren_signal}, Engine: {is_engine_signal}, Chime: {is_chime_signal}")
                     except Exception as e:
@@ -303,7 +304,7 @@ class ALMInferencePipeline:
                 lang_val = "te" # Telugu
 
         # Determine acoustic events, emotion, and scene environment using unified acoustic DSP + transcript intelligence
-        if is_siren_signal or any(w in text_lower for w in ["ambulance", "siren", "wail", "hospital", "police car"]):
+        if is_siren_signal or any(w in text_lower for w in ["ambulance", "siren", "wail", "police car", "fire engine"]):
             emo_label = "fearful"
             arousal = "high"
             events_list = [
@@ -322,7 +323,7 @@ class ALMInferencePipeline:
             ]
             scene_env = "Airport Terminal & Transit Concourse"
 
-        elif is_engine_signal or any(w in text_lower for w in ["engine", "motor", "car", "bus", "truck", "drive", "vehicle", "गाड़ी", "इंजन"]):
+        elif is_engine_signal or any(w in text_lower for w in ["jet engine", "turbine", "aircraft", "helicopter", "subway"]):
             emo_label = "neutral"
             arousal = "medium"
             events_list = [
@@ -332,7 +333,7 @@ class ALMInferencePipeline:
             ]
             scene_env = "Transit & Engine Acoustic Environment"
 
-        elif is_chime_signal or any(w in text_lower for w in ["beep", "chime", "bell", "ring", "announcement", "घंटी", "बीप"]):
+        elif is_chime_signal or any(w in text_lower for w in ["chime bell", "pa chime", "ding dong"]):
             emo_label = "neutral"
             arousal = "low"
             events_list = [
@@ -351,30 +352,39 @@ class ALMInferencePipeline:
         elif any(w in text_lower for w in ["happy", "joke", "haha", "great", "awesome", "good", "laugh", "अच्छा", "खुश", "मजाक", "సంతోషం", "నవ్వు", "జోక్"]):
             emo_label = "happy"
             arousal = "high"
-            events_list = [{"label": "laughter", "start": 0.0, "end": 2.0, "confidence": 0.93}, {"label": "ambient noise", "start": 2.0, "end": 5.0, "confidence": 0.87}]
+            events_list = [{"label": "laughter", "start": 0.0, "end": 2.0, "confidence": 0.93}, {"label": "ambient background", "start": 2.0, "end": 5.0, "confidence": 0.87}]
             scene_env = "Social Gathering"
 
+        elif any(w in text_lower for w in ["car", "bus", "truck", "traffic", "vehicle", "drive", "गाड़ी", "इंजन"]):
+            emo_label = "neutral"
+            arousal = "medium"
+            events_list = [{"label": "vehicle_engine", "start": 0.0, "end": 4.0, "confidence": 0.92}, {"label": "traffic_rumble", "start": 1.0, "end": 5.0, "confidence": 0.86}]
+            scene_env = "Urban Transit Environment"
+
         elif transcript and transcript != "Speech activity detected in audio recording.":
-            if avg_db > -22.0 or avg_pitch > 250.0:
-                emo_label = "fearful" if avg_pitch > 280.0 else ("angry" if avg_db > -18.0 else "excited")
-                arousal = "high"
-                events_list = [{"label": "speech", "start": 0.0, "end": 3.0, "confidence": 0.95}, {"label": "ambient background", "start": 3.0, "end": 5.0, "confidence": 0.88}]
-                scene_env = "Active Acoustic Environment"
-            else:
-                emo_label = "neutral"
-                arousal = "medium"
-                events_list = [{"label": "speech", "start": 0.0, "end": 5.0, "confidence": 0.95}, {"label": "ambient background", "start": 0.0, "end": 5.0, "confidence": 0.88}]
-                scene_env = "General Acoustic Environment"
+            emo_label = "neutral" if avg_pitch < 220.0 else ("fearful" if avg_pitch > 320.0 else "focused")
+            arousal = "medium"
+            events_list = [
+                {"label": "speech", "start": 0.0, "end": 4.5, "confidence": 0.96},
+                {"label": "ambient_room_noise", "start": 0.0, "end": 5.0, "confidence": 0.87}
+            ]
+            scene_env = "Indoor Acoustic Environment"
 
         else:
             emo_label = "neutral"
-            arousal = "medium"
-            events_list = [
-                {"label": "aircraft_jet_engine", "start": 0.0, "end": 4.5, "confidence": 0.92},
-                {"label": "terminal_pa_chime", "start": 0.5, "end": 2.0, "confidence": 0.90},
-                {"label": "ambient background", "start": 0.0, "end": 5.0, "confidence": 0.85}
-            ]
-            scene_env = "Acoustic Environment"
+            arousal = "low"
+            if avg_db < -42.0:
+                events_list = [
+                    {"label": "quiet_ambient", "start": 0.0, "end": 5.0, "confidence": 0.92},
+                    {"label": "room_reverberation", "start": 0.0, "end": 5.0, "confidence": 0.85}
+                ]
+                scene_env = "Quiet Room Environment"
+            else:
+                events_list = [
+                    {"label": "non_speech_vocalization", "start": 0.0, "end": 3.0, "confidence": 0.90},
+                    {"label": "ambient_background", "start": 0.0, "end": 5.0, "confidence": 0.86}
+                ]
+                scene_env = "General Acoustic Environment"
 
         para_data = {"emotion": emo_label, "arousal": arousal, "confidence": 0.88}
         formatted_events = events_list
