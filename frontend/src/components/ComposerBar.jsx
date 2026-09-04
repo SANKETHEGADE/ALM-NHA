@@ -1,18 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, MicOff, Upload, Sparkles, AlertCircle, Play, Volume2, AlertTriangle } from 'lucide-react';
+import { Mic, MicOff, Upload, Sparkles, AlertCircle, Play, Volume2, AlertTriangle, Send } from 'lucide-react';
 import { calculatePitchFromBuffer } from '../services/audioAnalyzer';
 
 /**
- * Stage 3: ComposerBar
- * Unified Typography & Button Styling matching the landing page:
- * - Rounded-full pill buttons matching "Try live demo" & "See how it works"
- * - JetBrains Mono uppercase tracking-wider labels
- * - Real-time audio waveform telemetry & live Voice to Text
+ * ComposerBar Component
+ * Provides microphone recording, file upload, and natural language question input.
+ * Connects directly to the Core ALM ML Service API.
  */
 export function ComposerBar({
   onLiveCaptureStart,
   onLiveCaptureStop,
   onAudioUploaded,
+  onAskQuestion,
   onLoadScenario,
   onAudioTelemetryUpdate,
   isCapturing,
@@ -24,6 +23,7 @@ export function ComposerBar({
   const [errorMessage, setErrorMessage] = useState(null);
   const [measuredPitch, setMeasuredPitch] = useState(null);
   const [measuredRms, setMeasuredRms] = useState(null);
+  const [questionText, setQuestionText] = useState('What can be inferred from speech and background sounds together?');
 
   const timerRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -36,7 +36,15 @@ export function ComposerBar({
   const mediaChunksRef = useRef([]);
   const liveTranscriptAccumulatorRef = useRef('');
 
-  // Setup Web Speech Recognition API
+  // Example PS-aligned question suggestions
+  const questionSuggestions = [
+    "What can be inferred from speech and background sounds together?",
+    "What sound event is present?",
+    "How many speakers are present?",
+    "What is the emotion of the speaker?",
+    "Where is the speaker likely to be?"
+  ];
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -94,12 +102,10 @@ export function ComposerBar({
     }
   };
 
-  // Start / Stop Live Voice Recording
   const handleToggleCapture = async () => {
     setErrorMessage(null);
 
     if (isCapturing) {
-      // STOP RECORDING
       const finalRecordedText = liveTranscriptAccumulatorRef.current.trim() || liveTranscript.trim();
       const duration = Math.max(1.5, recordSeconds || 3.0);
       const pitch = measuredPitch;
@@ -116,10 +122,9 @@ export function ComposerBar({
       if (onAudioTelemetryUpdate) onAudioTelemetryUpdate([]);
 
       const defaultText = finalRecordedText || '';
-      onLiveCaptureStop(defaultText, duration, { measuredPitch: pitch, measuredRms: rms }, recordedBlob);
+      onLiveCaptureStop(defaultText, duration, { measuredPitch: pitch, measuredRms: rms }, recordedBlob, questionText);
 
     } else {
-      // START RECORDING
       setRecordSeconds(0);
       setLiveTranscript('');
       liveTranscriptAccumulatorRef.current = '';
@@ -132,15 +137,10 @@ export function ComposerBar({
 
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true
-          }
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
         });
         mediaStreamRef.current = stream;
 
-        // Setup MediaRecorder for binary WAV/WebM audio blob capture
         try {
           const mediaRecorder = new MediaRecorder(stream);
           mediaRecorder.ondataavailable = (e) => {
@@ -185,7 +185,6 @@ export function ComposerBar({
               setMeasuredPitch(detectedPitch);
             }
 
-            // Sample 48 real-time FFT frequency bins responsive to actual microphone audio
             const numBars = 48;
             const step = Math.max(1, Math.floor((analyser.frequencyBinCount * 0.7) / numBars));
             const realSpectrogramBars = [];
@@ -209,11 +208,7 @@ export function ComposerBar({
         onLiveCaptureStart();
 
         if (recognitionRef.current) {
-          try {
-            recognitionRef.current.start();
-          } catch (err) {
-            console.warn('[ComposerBar] Speech recognition start warning:', err);
-          }
+          try { recognitionRef.current.start(); } catch (err) {}
         }
 
         timerRef.current = setInterval(() => {
@@ -230,22 +225,16 @@ export function ComposerBar({
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      onAudioUploaded(file);
+      onAudioUploaded(file, questionText);
       e.target.value = '';
     }
-  };
-
-  const formatSeconds = (sec) => {
-    const mins = Math.floor(sec / 60);
-    const s = sec % 60;
-    return `${mins.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
   return (
     <div className="w-full bg-[#121212] border-t border-[#262626] p-4 shrink-0 flex flex-col gap-3 items-center justify-center select-none">
       {/* Error Banner */}
       {errorMessage && (
-        <div className="bg-[#1e1e1e] border border-red-500/30 rounded-xl p-3 px-4 flex items-center justify-between gap-3 text-xs text-[#f87171] shadow-sm w-full">
+        <div className="bg-[#1e1e1e] border border-red-500/30 rounded-xl p-3 px-4 flex items-center justify-between gap-3 text-xs text-[#f87171] shadow-sm w-full max-w-3xl">
           <div className="flex items-center gap-2.5">
             <AlertTriangle className="w-4 h-4 shrink-0" />
             <span>{errorMessage}</span>
@@ -260,65 +249,77 @@ export function ComposerBar({
         </div>
       )}
 
-      {/* Live Progressive Speech Transcription Display while Recording */}
+      {/* Live Voice Transcription */}
       {isCapturing && (
-        <div className="bg-[#1e1e1e] border border-[#2d2d2d] rounded-xl p-3 flex items-center gap-3 animate-in fade-in duration-150">
+        <div className="bg-[#1e1e1e] border border-[#2d2d2d] rounded-xl p-3 flex items-center gap-3 w-full max-w-3xl animate-in fade-in duration-150">
           <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping shrink-0" />
           <div className="flex items-center gap-2 min-w-0 flex-1">
-            <span className="text-xs font-medium text-[#ececec] shrink-0">
-              Live Voice to Text:
-            </span>
+            <span className="text-xs font-medium text-[#ececec] shrink-0">Live Voice:</span>
             <span className="text-xs text-[#8e8ea0] italic truncate">
               {liveTranscript ? `"${liveTranscript}"` : 'Listening for spoken voice...'}
             </span>
           </div>
-          {measuredPitch && (
-            <span className="text-xs text-[#8e8ea0] shrink-0 hidden sm:inline">
-              F0: {measuredPitch} Hz
-            </span>
-          )}
         </div>
       )}
 
-      {/* Suggestion Chips Above Action Bar */}
-      <div className="flex flex-wrap items-center justify-center gap-2 text-xs">
-        <button
-          type="button"
-          onClick={() => onLoadScenario('joke')}
-          disabled={isLoading || isCapturing}
-          className="bg-[#1e1e1e] hover:bg-[#282828] border border-[#2d2d2d] text-[#ececec] text-xs px-3 py-1 rounded-full transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
-          title="Regression Benchmark: Explicit joke with 'help' keyword"
-        >
-          <Sparkles className="w-3 h-3 text-[#8e8ea0]" />
-          <span>Joke Regression</span>
-        </button>
+      {/* Natural Language Question Input Field */}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (questionText && onAskQuestion) {
+            onAskQuestion(questionText);
+          }
+        }}
+        className="w-full max-w-3xl flex flex-col gap-2"
+      >
+        <div className="flex items-center gap-2 bg-[#181818] border border-[#262626] rounded-xl px-4 py-2 focus-within:border-[#404040] transition-colors">
+          <span className="text-xs text-[#8e8ea0] font-mono shrink-0">Question:</span>
+          <input
+            type="text"
+            value={questionText}
+            onChange={(e) => setQuestionText(e.target.value)}
+            placeholder="Ask Core ALM a question about the audio..."
+            disabled={isLoading || isCapturing}
+            className="flex-1 bg-transparent text-xs text-white placeholder-[#525252] focus:outline-none"
+          />
+          <button
+            type="submit"
+            disabled={isLoading || isCapturing || !questionText.trim()}
+            className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 disabled:opacity-30 disabled:hover:bg-emerald-500/20 cursor-pointer transition-colors"
+            title="Ask Core ALM"
+          >
+            <Send className="w-3.5 h-3.5" />
+          </button>
+        </div>
 
-        <button
-          type="button"
-          onClick={() => onLoadScenario('emergency')}
-          disabled={isLoading || isCapturing}
-          className="bg-[#1e1e1e] hover:bg-[#282828] border border-[#2d2d2d] text-[#ececec] text-xs px-3 py-1 rounded-lg transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
-          title="Active Threat: Gunfire transient & high-arousal distress"
-        >
-          <Sparkles className="w-3 h-3 text-[#8e8ea0]" />
-          <span>Real Emergency</span>
-        </button>
+        {/* Question Suggestion Chips */}
+        <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs pt-1">
+          <span className="text-[11px] text-[#737373] mr-1">Suggestions:</span>
+          {questionSuggestions.map((q, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => {
+                setQuestionText(q);
+                if (onAskQuestion) {
+                  onAskQuestion(q);
+                }
+              }}
+              disabled={isLoading || isCapturing}
+              className={`text-[11px] px-2.5 py-0.5 rounded-full border transition-colors cursor-pointer disabled:opacity-50 ${
+                questionText === q
+                  ? 'bg-[#262626] border-[#404040] text-white font-medium'
+                  : 'bg-[#181818] border-[#262626] text-[#8e8ea0] hover:text-white hover:border-[#333333]'
+              }`}
+            >
+              {q}
+            </button>
+          ))}
+        </div>
+      </form>
 
-        <button
-          type="button"
-          onClick={() => onLoadScenario('hypothetical')}
-          disabled={isLoading || isCapturing}
-          className="bg-[#1e1e1e] hover:bg-[#282828] border border-[#2d2d2d] text-[#ececec] text-xs px-3 py-1 rounded-lg transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
-          title="Hypothetical inquiry with weapon keywords"
-        >
-          <Sparkles className="w-3 h-3 text-[#8e8ea0]" />
-          <span>Hypothetical</span>
-        </button>
-      </div>
-
-      {/* CENTERED BACKGROUNDLESS ACTION BAR (No chat text box, centered Mic & Upload ghost icons) */}
-      <div className="flex items-center justify-center gap-5 py-2">
-        {/* Hidden File Input */}
+      {/* ACTION BAR: Centered Microphone & Upload Buttons */}
+      <div className="flex items-center justify-center gap-5 py-1">
         <input
           type="file"
           ref={fileInputRef}
@@ -327,14 +328,14 @@ export function ComposerBar({
           className="hidden"
         />
 
-        {/* 1. Mic Ghost Button (Centered, Backgroundless, Icon Only, No Text) */}
+        {/* Microphone Button */}
         <button
           type="button"
           onClick={handleToggleCapture}
           disabled={isLoading}
           className={`p-3 rounded-full bg-transparent transition-all duration-150 active:scale-95 cursor-pointer ${
             isCapturing
-              ? 'text-red-500 animate-pulse'
+              ? 'text-red-500 animate-pulse bg-red-500/10'
               : 'text-white hover:text-neutral-300 hover:bg-[#1e1e1e]/50'
           }`}
           title={isCapturing ? "Stop Voice Recording" : "Start Voice Recording"}
@@ -342,13 +343,13 @@ export function ComposerBar({
           {isCapturing ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
         </button>
 
-        {/* 2. Upload Ghost Button (Next to Mic, Centered, Backgroundless, Icon Only, No Text) */}
+        {/* Upload Audio File Button */}
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={isCapturing || isLoading}
           className="p-3 rounded-full bg-transparent text-[#8e8ea0] hover:text-white hover:bg-[#1e1e1e]/50 transition-all duration-150 active:scale-95 cursor-pointer disabled:opacity-50"
-          title="Upload Audio File"
+          title="Upload Audio File for Core ALM Analysis"
         >
           <Upload className="w-6 h-6" />
         </button>

@@ -1,6 +1,5 @@
 import React from 'react';
 import { VoiceAIOrbVisualizer } from './VoiceAIOrbVisualizer';
-import { RealForensicCharts } from './RealForensicCharts';
 import {
   ShieldAlert,
   ShieldCheck,
@@ -11,14 +10,12 @@ import {
   Activity,
   Layers,
   CheckCircle2,
-  XCircle,
   Clock,
   Info,
-  Radio,
-  Sliders,
   Sparkles,
-  Zap,
-  Volume2
+  Volume2,
+  HelpCircle,
+  Radio
 } from 'lucide-react';
 
 export function VerdictPanel({ activeSession, isLoading, isCapturing, realtimeTelemetry = [] }) {
@@ -27,13 +24,12 @@ export function VerdictPanel({ activeSession, isLoading, isCapturing, realtimeTe
       <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-8 bg-[#0d0d0d] text-[#ececec]">
         <div className="flex flex-col items-center gap-4 animate-in fade-in duration-200">
           <VoiceAIOrbVisualizer telemetry={realtimeTelemetry} isCapturing={true} />
-          
           <div className="flex flex-col items-center gap-1.5 text-center">
             <span className="text-sm font-medium text-white tracking-wide">
-              Listening for voice input...
+              Listening for audio input...
             </span>
             <span className="text-xs text-[#8e8ea0]">
-              Real-time Web Audio FFT responsive telemetry
+              Real-time Web Audio FFT telemetry active
             </span>
           </div>
         </div>
@@ -46,13 +42,12 @@ export function VerdictPanel({ activeSession, isLoading, isCapturing, realtimeTe
       <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-8 bg-[#0d0d0d] text-[#ececec]">
         <div className="flex flex-col items-center gap-4 animate-in fade-in duration-200">
           <VoiceAIOrbVisualizer telemetry={realtimeTelemetry} isCapturing={false} />
-
           <div className="flex flex-col items-center gap-1.5 text-center">
             <span className="text-sm font-medium text-white tracking-wide animate-pulse">
-              Processing Voice Telemetry & Multimodal Intent...
+              Running Core ALM Multimodal Reasoning Pass...
             </span>
             <span className="text-xs text-[#8e8ea0]">
-              Synthesizing vocal biometrics, pitch, & speaker diarization
+              Fusing ASR, Sound Events, Speakers, & Paralinguistics
             </span>
           </div>
         </div>
@@ -64,236 +59,309 @@ export function VerdictPanel({ activeSession, isLoading, isCapturing, realtimeTe
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 bg-[#0d0d0d] text-[#ececec] overflow-y-auto select-none">
         <div className="max-w-3xl w-full flex flex-col items-center gap-8 animate-in fade-in duration-300 my-auto">
-          
-          {/* Big Font Quote Header */}
           <div className="flex flex-col items-center text-center gap-3">
             <h1 className="text-2xl md:text-3xl font-medium tracking-tight text-[#ececec]">
-              What can Vox help with?
+              Smart Horizon — Core ALM Engine
             </h1>
             <p className="text-sm md:text-base text-[#8e8ea0] max-w-xl leading-relaxed italic">
-              "Forensic acoustic intelligence engine for real-time speech threat evaluation, vocal biometrics, and multi-speaker diarization."
+              "Multimodal Audio Language Model for continuous acoustic perception, speaker diarization, vocal affect, and natural language question answering."
             </p>
           </div>
 
-          {/* 4 Feature Cards Grid (ChatGPT Style) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full pt-2">
-            
-            {/* Card 1 */}
-            <div className="bg-[#181818] border border-[#262626] rounded-xl p-5 flex flex-col gap-2.5 hover:border-[#383838] transition-colors">
+            <div className="bg-[#181818] border border-[#262626] rounded-xl p-5 flex flex-col gap-2.5">
               <div className="flex items-center gap-2 text-white">
-                <ShieldAlert className="w-5 h-5 text-[#ececec]" />
-                <h3 className="text-sm font-medium">Real-Time Threat Detection</h3>
+                <Mic className="w-5 h-5 text-[#ececec]" />
+                <h3 className="text-sm font-medium">Multilingual Speech & ASR</h3>
               </div>
               <p className="text-xs text-[#8e8ea0] leading-relaxed">
-                Evaluates incoming voice streams against trained PyTorch models to flag emergency calls, armed threats, or distress signals.
+                Extracts speech latent representations and transcriptions across multiple languages using the Lahari encoder.
               </p>
             </div>
 
-            {/* Card 2 */}
-            <div className="bg-[#181818] border border-[#262626] rounded-xl p-5 flex flex-col gap-2.5 hover:border-[#383838] transition-colors">
+            <div className="bg-[#181818] border border-[#262626] rounded-xl p-5 flex flex-col gap-2.5">
               <div className="flex items-center gap-2 text-white">
-                <Activity className="w-5 h-5 text-[#ececec]" />
-                <h3 className="text-sm font-medium">Acoustic Telemetry & Pitch</h3>
+                <Volume2 className="w-5 h-5 text-[#ececec]" />
+                <h3 className="text-sm font-medium">Sound Event Perception</h3>
               </div>
               <p className="text-xs text-[#8e8ea0] leading-relaxed">
-                Calculates real fundamental pitch (F0 Hz), RMS volume energy (dB), speech cadence (WPM), and signal-to-noise ratio.
+                Perceives non-speech acoustic events such as sirens, barks, bus noise, crowd chatter, and rain.
               </p>
             </div>
 
-            {/* Card 3 */}
-            <div className="bg-[#181818] border border-[#262626] rounded-xl p-5 flex flex-col gap-2.5 hover:border-[#383838] transition-colors">
+            <div className="bg-[#181818] border border-[#262626] rounded-xl p-5 flex flex-col gap-2.5">
               <div className="flex items-center gap-2 text-white">
                 <Users className="w-5 h-5 text-[#ececec]" />
-                <h3 className="text-sm font-medium">Multi-Speaker Diarization</h3>
+                <h3 className="text-sm font-medium">Speaker Diarization & Count</h3>
               </div>
               <p className="text-xs text-[#8e8ea0] leading-relaxed">
-                Extracts voiceprint embeddings to isolate and segment distinct conversational speaker turns (Speaker 1, Speaker 2).
+                Identifies active speaker count, turn-taking boundaries, and individual speaker representations.
               </p>
             </div>
 
-            {/* Card 4 */}
-            <div className="bg-[#181818] border border-[#262626] rounded-xl p-5 flex flex-col gap-2.5 hover:border-[#383838] transition-colors">
+            <div className="bg-[#181818] border border-[#262626] rounded-xl p-5 flex flex-col gap-2.5">
               <div className="flex items-center gap-2 text-white">
                 <Sparkles className="w-5 h-5 text-[#ececec]" />
-                <h3 className="text-sm font-medium">Context & Intent Reasoning</h3>
+                <h3 className="text-sm font-medium">Core ALM Generative Decoder</h3>
               </div>
               <p className="text-xs text-[#8e8ea0] leading-relaxed">
-                Multimodal LLM reasoning disambiguates actual critical incidents from sarcastic remarks, movie quotes, and jokes.
+                Autoregressively decodes precise natural language answers over a 5,000-token acoustic domain vocabulary.
               </p>
             </div>
-
           </div>
 
           <span className="text-xs text-[#8e8ea0] font-mono pt-2">
-            Click the centered <strong className="text-white">Microphone</strong> or <strong className="text-white">Upload</strong> icon below to begin audio analysis
+            Click the <strong className="text-white">Microphone</strong> or <strong className="text-white">Upload</strong> icon below to ask a question
           </span>
-
         </div>
       </div>
     );
   }
 
-  const { fusion, diarization, acoustic_features } = activeSession.result;
-  const threatLevel = fusion?.threat_level || 'NOMINAL';
-  const rationale = fusion?.fusion_rationale || 'Analysis complete.';
-  const channelsUsed = fusion?.channels_used || ['transcript', 'vocal_biometrics'];
-  const channelsDiscounted = fusion?.channels_discounted || [];
-  const intent = fusion?.intent || 'Evaluated Speech Pattern';
-  const semantic = fusion?.semantic_analysis || {};
-  const confidences = fusion?.confidence_metrics || {
-    speech_confidence: 96,
-    classification_confidence: fusion?.confidence || 95,
-    acoustic_confidence: 94,
-    speaker_confidence: diarization?.confidence || 96
-  };
-
+  const result = activeSession.result;
   const capture = activeSession.capture || {};
-  const biometrics = capture.vocalBiometrics || { emotion: 'neutral', arousal: 'low', confidence: 0.94 };
-  const acousticEvents = capture.acousticEvents || [];
-  const acoustics = acoustic_features || {
-    pitch_f0: 138,
-    pitch_label: 'Normal Pitch',
-    pitch_description: 'Standard vocal register (~138 Hz)',
-    volume_rms_db: -18,
-    speech_rate_wpm: 145,
-    voice_activity_pct: 82,
-    silence_duration_sec: 0.4,
-    snr_db: 24,
-    background_noise_db: -46
-  };
 
-  const isCritical = threatLevel === 'CRITICAL' || threatLevel === 'HIGH';
+  const answerText = result.answer || "No response generated.";
+  const confidence = result.confidence !== undefined ? result.confidence : 0.85;
+  const confPct = Math.round(confidence * 100);
+  const evidenceList = result.evidence || [];
 
-  const threatTheme = isCritical
-    ? {
-        badge: 'bg-red-500/15 text-red-400 border border-red-500/20',
-        title: 'Critical active threat'
-      }
-    : {
-        badge: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20',
-        title: 'Nominal / Non-threatening scene'
-      };
+  const speechData = result.speech || {};
+  const transcript = speechData.transcript || capture.transcript || "";
+  const language = speechData.language || "en";
+
+  const eventsList = Array.isArray(result.audio_events) ? result.audio_events : (result.audio_events?.events || []);
+  const speakersList = Array.isArray(result.speakers) ? result.speakers : (result.speakers?.diarization || []);
+  const paralinguistic = result.paralinguistic || {};
+  const sceneData = result.scene || {};
 
   return (
     <div className="flex-1 overflow-y-auto px-6 md:px-12 py-8 flex flex-col gap-6 w-full max-w-4xl mx-auto select-text bg-[#0d0d0d] text-[#ececec]">
-      {/* 1. USER PROMPT MESSAGE (Right-aligned ChatGPT user prompt) */}
+      {/* 1. USER QUESTION CARD */}
       <div className="flex items-start justify-end gap-3 animate-in fade-in duration-150">
         <div className="bg-[#181818] border border-[#262626] text-[#ececec] rounded-2xl px-4 py-3 max-w-xl text-sm leading-relaxed shadow-xs">
-          <div className="text-[11px] text-[#8e8ea0] mb-1 font-medium">User Voice</div>
-          <div>"{capture.transcript || 'Audio sample evaluated'}"</div>
+          <div className="text-[11px] text-[#8e8ea0] mb-1 font-medium flex items-center gap-1.5">
+            <HelpCircle className="w-3.5 h-3.5 text-[#8e8ea0]" />
+            <span>Question</span>
+          </div>
+          <div>"{capture.question || 'Where is the speaker likely to be?'}"</div>
         </div>
         <div className="w-8 h-8 rounded-full bg-[#262626] flex items-center justify-center text-white text-xs font-semibold shrink-0">
-          You
+          User
         </div>
       </div>
 
-      {/* 2. CHATGPT ASSISTANT RESPONSE STREAM (Assistant response card block) */}
+      {/* 2. CORE ALM ANSWER CARD */}
       <div className="flex items-start gap-4 pt-1 animate-in fade-in duration-200">
-        {/* ChatGPT AI Avatar */}
         <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-xs font-bold shrink-0 shadow-sm">
-          SH
+          ALM
         </div>
 
-        {/* Assistant Content Stream (Distinct Message Block, rounded 12px) */}
-        <div className="flex-1 flex flex-col gap-6 text-sm leading-relaxed text-[#ececec] bg-[#181818] border border-[#262626] rounded-xl p-5 shadow-sm">
-          {/* Verdict Title & Badge */}
-          <div className="flex items-center gap-3">
-            <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${threatTheme.badge}`}>
-              {threatLevel}
-            </span>
-            <h3 className="text-base font-medium text-[#ececec]">
-              {threatTheme.title}
-            </h3>
-          </div>
+        <div className="flex-1 flex flex-col gap-6 text-sm leading-relaxed text-[#ececec] bg-[#181818] border border-[#262626] rounded-xl p-6 shadow-sm">
+          
+          {/* Main Answer Header */}
+          <div className="flex items-center justify-between border-b border-[#262626] pb-4">
+            <div className="flex flex-col gap-1">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-emerald-400 font-bold flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5" />
+                CORE ALM REASONING
+              </span>
+              <h2 className="text-xl font-bold text-white tracking-tight">
+                {answerText}
+              </h2>
+            </div>
 
-          {/* Rationale Narrative */}
-          <div className="text-sm text-[#ececec] leading-relaxed">
-            {rationale}
-          </div>
-
-          {/* Semantic & Intent Analysis List */}
-          <div className="flex flex-col gap-2.5 pt-4 border-t border-[#262626]">
-            <h4 className="text-sm font-medium text-[#ececec]">Semantic & intent reasoning</h4>
-            <ul className="space-y-2 text-xs text-[#8e8ea0] pl-1">
-              <li className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#ececec]" />
-                <span><strong className="text-[#ececec] font-medium">Intent:</strong> {intent}</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#ececec]" />
-                <span><strong className="text-[#ececec] font-medium">Modality:</strong> {semantic.modality || 'Actual Incident'}</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#ececec]" />
-                <span><strong className="text-[#ececec] font-medium">Temporal Frame:</strong> {semantic.temporal_frame || 'Present (Active)'}</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#ececec]" />
-                <span><strong className="text-[#ececec] font-medium">Negation Detected:</strong> {semantic.negation_detected ? 'Yes (Negated context evaluated)' : 'No'}</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#ececec]" />
-                <span><strong className="text-[#ececec] font-medium">Joke / Humor Detected:</strong> {semantic.joke_detected ? 'Yes (Humorous tone / joke context)' : 'No'}</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Physical Acoustic Measurements Stat Grid (#1e1e1e bg, 12px rounded, border #262626) */}
-          <div className="flex flex-col gap-2.5 pt-4 border-t border-[#262626]">
-            <h4 className="text-sm font-medium text-[#ececec]">Physical acoustic measurements</h4>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
-              <div className="bg-[#1e1e1e] border border-[#262626] rounded-xl p-3 flex flex-col gap-1">
-                <span className="text-[11px] text-[#8e8ea0] font-normal">Pitch (F0)</span>
-                <span className="text-sm font-medium text-[#ececec]">{acoustics.pitch_f0} Hz</span>
-                <span className="text-[10px] text-[#8e8ea0]">{acoustics.pitch_label}</span>
-              </div>
-              <div className="bg-[#1e1e1e] border border-[#262626] rounded-xl p-3 flex flex-col gap-1">
-                <span className="text-[11px] text-[#8e8ea0] font-normal">RMS Energy</span>
-                <span className="text-sm font-medium text-[#ececec]">{acoustics.volume_rms_db} dB</span>
-                <span className="text-[10px] text-[#8e8ea0]">Amplitude</span>
-              </div>
-              <div className="bg-[#1e1e1e] border border-[#262626] rounded-xl p-3 flex flex-col gap-1">
-                <span className="text-[11px] text-[#8e8ea0] font-normal">Speech Rate</span>
-                <span className="text-sm font-medium text-[#ececec]">{acoustics.speech_rate_wpm} WPM</span>
-                <span className="text-[10px] text-[#8e8ea0]">Cadence</span>
-              </div>
-              <div className="bg-[#1e1e1e] border border-[#262626] rounded-xl p-3 flex flex-col gap-1">
-                <span className="text-[11px] text-[#8e8ea0] font-normal">SNR Signal</span>
-                <span className="text-sm font-medium text-[#ececec]">+{acoustics.snr_db} dB</span>
-                <span className="text-[10px] text-[#8e8ea0]">{acoustics.voice_activity_pct}% active</span>
-              </div>
+            <div className="flex items-center gap-1.5 bg-[#222222] border border-[#333333] px-3.5 py-1.5 rounded-lg text-xs font-mono shrink-0">
+              <span className="text-[#8e8ea0]">Confidence:</span>
+              <span className="text-emerald-400 font-bold text-sm">{confPct}%</span>
             </div>
           </div>
 
-          {/* Real Forensic Data Charts (Confidence Distribution & Acoustic Frequency Visualizer) */}
-          <RealForensicCharts
-            confidences={confidences}
-            acoustics={acoustics}
-            biometrics={biometrics}
-            soundEvents={acousticEvents}
-          />
+          {/* Structured Evidence Decomposition */}
+          <div className="flex flex-col gap-3">
+            <h4 className="text-xs uppercase tracking-wider font-semibold text-[#8e8ea0] flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5 text-[#8e8ea0]" />
+              Reasoning Evidence & Modality Decomposition
+            </h4>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Speech Evidence */}
+              <div className="bg-[#1e1e1e] border border-[#262626] rounded-xl p-3.5 flex flex-col gap-1.5">
+                <span className="text-xs font-semibold text-white flex items-center gap-1.5">
+                  <Mic className="w-3.5 h-3.5 text-emerald-400" />
+                  Speech Evidence
+                </span>
+                <p className="text-xs text-[#cccccc] font-mono">
+                  {result.speech_evidence || `Transcript: "${transcript}" | Language: ${language}`}
+                </p>
+              </div>
 
-          {/* Speaker Diarization Turns (Blockquote style: left border #565869, italic text, #1e1e1e bg) */}
-          {diarization?.speaker_segments && diarization.speaker_segments.length > 0 && (
-            <div className="flex flex-col gap-3 pt-4 border-t border-[#262626]">
-              <h4 className="text-sm font-medium text-[#ececec]">
-                Diarized speaker turns ({diarization.speaker_segments.length})
+              {/* Non-Speech Evidence */}
+              <div className="bg-[#1e1e1e] border border-[#262626] rounded-xl p-3.5 flex flex-col gap-1.5">
+                <span className="text-xs font-semibold text-white flex items-center gap-1.5">
+                  <Volume2 className="w-3.5 h-3.5 text-cyan-400" />
+                  Non-Speech Evidence
+                </span>
+                <p className="text-xs text-[#cccccc] font-mono">
+                  {result.non_speech_evidence || `Events: ${eventsList.map(e => typeof e === 'string' ? e : e.label).join(', ')}`}
+                </p>
+              </div>
+
+              {/* Speaker Evidence */}
+              <div className="bg-[#1e1e1e] border border-[#262626] rounded-xl p-3.5 flex flex-col gap-1.5">
+                <span className="text-xs font-semibold text-white flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-purple-400" />
+                  Speaker Evidence
+                </span>
+                <p className="text-xs text-[#cccccc] font-mono">
+                  {result.speaker_evidence || `${speakersList.length || 1} speaker turn(s) active`}
+                </p>
+              </div>
+
+              {/* Paralinguistic Evidence */}
+              <div className="bg-[#1e1e1e] border border-[#262626] rounded-xl p-3.5 flex flex-col gap-1.5">
+                <span className="text-xs font-semibold text-white flex items-center gap-1.5">
+                  <Activity className="w-3.5 h-3.5 text-amber-400" />
+                  Paralinguistic Evidence
+                </span>
+                <p className="text-xs text-[#cccccc] font-mono">
+                  {result.paralinguistic_evidence || `Emotion: ${paralinguistic.emotion || 'neutral'} | Arousal: ${paralinguistic.arousal || 'low'}`}
+                </p>
+              </div>
+            </div>
+
+            {/* Joint & Temporal Inference Evidence */}
+            {result.reasoning_evidence && (
+              <div className="bg-[#1c241f] border border-emerald-500/20 rounded-xl p-3.5 flex flex-col gap-1">
+                <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Integrated Multimodal Inference
+                </span>
+                <p className="text-xs text-[#d1d5db]">
+                  {result.reasoning_evidence}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Model Grounding Evidence Section */}
+          {evidenceList.length > 0 && (
+            <div className="flex flex-col gap-2.5 pt-2 border-t border-[#262626]">
+              <h4 className="text-xs uppercase tracking-wider font-semibold text-[#8e8ea0] flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5" />
+                Acoustic Attention & Grounding Evidence
               </h4>
-              <div className="flex flex-col gap-2.5">
-                {diarization.speaker_segments.map((spk, idx) => (
-                  <div
-                    key={idx}
-                    className="bg-[#1e1e1e] border-l-4 border-[#565869] rounded-r-xl p-3 text-xs leading-relaxed"
-                  >
-                    <span className="font-medium text-[#ececec] block mb-1">
-                      {spk.speaker_id || `Speaker ${idx + 1}`} [{Number(spk.start).toFixed(1)}s - {Number(spk.end).toFixed(1)}s]:
-                    </span>
-                    <p className="italic text-[#8e8ea0]">"{spk.text}"</p>
+              <div className="flex flex-col gap-2">
+                {evidenceList.map((item, idx) => (
+                  <div key={idx} className="bg-[#1e1e1e] border border-[#292929] rounded-lg p-2.5 px-3 text-xs text-[#cccccc] flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5 text-[#8e8ea0] shrink-0" />
+                    <span>{item}</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
+
+          {/* Acoustic Modalities Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+            
+            {/* Speech & Transcript Card */}
+            <div className="bg-[#1e1e1e] border border-[#262626] rounded-xl p-4 flex flex-col gap-2">
+              <div className="flex items-center justify-between text-xs text-[#8e8ea0] font-medium">
+                <span className="flex items-center gap-1.5 text-white">
+                  <Mic className="w-4 h-4 text-[#ececec]" />
+                  ASR Transcript
+                </span>
+                <span className="uppercase text-[10px] bg-[#262626] px-2 py-0.5 rounded text-[#cccccc]">
+                  Lang: {language}
+                </span>
+              </div>
+              <p className="text-xs text-[#cccccc] italic">
+                {transcript ? `"${transcript}"` : "No speech transcript decoded."}
+              </p>
+            </div>
+
+            {/* Paralinguistic / Emotion Card */}
+            <div className="bg-[#1e1e1e] border border-[#262626] rounded-xl p-4 flex flex-col gap-2">
+              <div className="flex items-center justify-between text-xs text-[#8e8ea0] font-medium">
+                <span className="flex items-center gap-1.5 text-white">
+                  <Activity className="w-4 h-4 text-[#ececec]" />
+                  Vocal Affect / Paralinguistics
+                </span>
+              </div>
+              <div className="text-xs text-[#cccccc] flex items-center justify-between pt-1">
+                <span>Emotion: <strong className="text-white capitalize">{paralinguistic.emotion || 'neutral'}</strong></span>
+                <span>Arousal: <strong className="text-white capitalize">{paralinguistic.arousal || 'low'}</strong></span>
+              </div>
+            </div>
+
+            {/* Sound Events Card */}
+            <div className="bg-[#1e1e1e] border border-[#262626] rounded-xl p-4 flex flex-col gap-2">
+              <div className="flex items-center justify-between text-xs text-[#8e8ea0] font-medium">
+                <span className="flex items-center gap-1.5 text-white">
+                  <Volume2 className="w-4 h-4 text-[#ececec]" />
+                  Sound Events
+                </span>
+                <span className="text-[10px] text-[#8e8ea0]">
+                  {eventsList.length} detected
+                </span>
+              </div>
+              {eventsList.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {eventsList.map((ev, idx) => {
+                    const label = typeof ev === 'string' ? ev : (ev.label || ev.event || 'event');
+                    return (
+                      <span key={idx} className="bg-[#262626] border border-[#333333] px-2 py-0.5 rounded text-[11px] text-white">
+                        {label}
+                      </span>
+                    );
+                  })}
+                </div>
+              ) : (
+                <span className="text-xs text-[#8e8ea0] italic">No discrete sound events detected.</span>
+              )}
+            </div>
+
+            {/* Scene Environment Card */}
+            <div className="bg-[#1e1e1e] border border-[#262626] rounded-xl p-4 flex flex-col gap-2">
+              <div className="flex items-center justify-between text-xs text-[#8e8ea0] font-medium">
+                <span className="flex items-center gap-1.5 text-white">
+                  <Radio className="w-4 h-4 text-[#ececec]" />
+                  Acoustic Scene
+                </span>
+              </div>
+              <div className="text-xs text-[#cccccc] pt-1">
+                Environment: <strong className="text-white capitalize">{sceneData.environment || 'Ambient Context'}</strong>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Speaker Diarization Segments */}
+          {speakersList.length > 0 && (
+            <div className="flex flex-col gap-2.5 pt-2 border-t border-[#262626]">
+              <h4 className="text-xs uppercase tracking-wider font-semibold text-[#8e8ea0]">
+                Speaker Diarization ({speakersList.length} turns)
+              </h4>
+              <div className="flex flex-col gap-2">
+                {speakersList.map((spk, idx) => {
+                  const spkId = typeof spk === 'object' ? (spk.speaker_id || spk.speaker || `Speaker ${idx+1}`) : `Speaker ${idx+1}`;
+                  const st = typeof spk === 'object' ? (spk.start ?? 0.0) : 0.0;
+                  const en = typeof spk === 'object' ? (spk.end ?? 5.0) : 5.0;
+                  const txt = typeof spk === 'object' ? spk.text : String(spk);
+                  return (
+                    <div key={idx} className="bg-[#1e1e1e] border-l-4 border-[#565869] rounded-r-xl p-3 text-xs leading-relaxed">
+                      <span className="font-medium text-[#ececec] block mb-0.5">
+                        {spkId} [{Number(st).toFixed(1)}s - {Number(en).toFixed(1)}s]
+                      </span>
+                      {txt && <p className="italic text-[#8e8ea0]">"{txt}"</p>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
     </div>

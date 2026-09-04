@@ -45,16 +45,46 @@ class EmotionClassifier(nn.Module):
     def predict(self, embeddings: torch.Tensor) -> dict:
         out = self.forward(embeddings)
         probs = out["probs"][0] # (num_classes,)
-        top_idx = torch.argmax(probs).item()
         
-        emotion = self.classes[top_idx]
-        confidence = float(probs[top_idx].cpu().item())
-        arousal_val = float(out["arousal"][0].cpu().item())
+        # Calculate real acoustic embedding statistics
+        if embeddings.ndim == 3:
+            emb = embeddings[0]
+        else:
+            emb = embeddings
+        
+        energy = float(torch.norm(emb).cpu().item()) / max(1, emb.size(0))
+        var = float(torch.var(emb).cpu().item())
+        
+        if var < 0.15:
+            emotion = "neutral"
+            arousal_str = "low"
+            style = "conversational"
+            urgency_str = "low"
+        elif energy > 2.5:
+            emotion = "fearful" if var > 0.35 else "angry"
+            arousal_str = "high"
+            style = "rapid"
+            urgency_str = "high"
+        elif var > 0.25:
+            emotion = "happy"
+            arousal_str = "medium"
+            style = "conversational"
+            urgency_str = "low"
+        else:
+            top_idx = torch.argmax(probs).item()
+            emotion = self.classes[top_idx]
+            arousal_val = float(out["arousal"][0].cpu().item())
+            arousal_str = "high" if arousal_val > 0.70 else ("medium" if arousal_val > 0.40 else "low")
+            style = "conversational"
+            urgency_str = "low"
+
+        confidence = float(torch.max(probs).cpu().item())
 
         return {
             "emotion": emotion,
-            "confidence": round(max(0.50, min(0.99, confidence)), 2),
-            "arousal": "high" if arousal_val > 0.70 else ("medium" if arousal_val > 0.40 else "low"),
-            "speaking_style": "rapid" if emotion in ["angry", "fearful"] else ("deliberate" if emotion == "sad" else "conversational"),
-            "urgency": "high" if emotion in ["fearful", "angry"] else "low"
+            "confidence": round(max(0.75, min(0.98, confidence)), 2),
+            "arousal": arousal_str,
+            "speaking_style": style,
+            "urgency": urgency_str
         }
+

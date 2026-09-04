@@ -25,6 +25,16 @@ class TemporalFusionAdapter(nn.Module):
         self.embed_dim = embed_dim
         self.modality_indicator = ModalityEmbeddingToken(num_modalities=5, embed_dim=embed_dim)
         
+        self.temporal_pos_emb = nn.Parameter(torch.zeros(1, 64, embed_dim))
+        nn.init.normal_(self.temporal_pos_emb, std=0.02)
+        
+        # Concat projection layer to preserve individual modality streams
+        self.fusion_proj = nn.Sequential(
+            nn.Linear(embed_dim * 5, embed_dim),
+            nn.LayerNorm(embed_dim),
+            nn.GELU()
+        )
+        
         # Cross-Modal Multi-Head Attention layers
         self.cross_attn = nn.MultiheadAttention(embed_dim=embed_dim, num_heads=num_heads, batch_first=True, dropout=dropout)
         
@@ -53,13 +63,16 @@ class TemporalFusionAdapter(nn.Module):
         p = self.modality_indicator(aligned_dict["paralinguistic"], 3)
         a = self.modality_indicator(aligned_dict["audio"], 4)
 
-        # 1. Temporal Frame-by-Frame Fusion: sum/average base features per timestep + cross attention
-        base_fused = (s + e + sp + p + a) / 5.0 # (B, T, D)
+        # Preserve distinct modality information via concatenation + projection
+        concat_fused = torch.cat([s, e, sp, p, a], dim=-1)
+        base_fused = self.fusion_proj(concat_fused)
 
-        # 2. Cross-Attention refinement: query=audio stream, key/value=composite modal stream
+        # Cross-Attention refinement
         attn_out, _ = self.cross_attn(query=base_fused, key=base_fused, value=base_fused)
         fused = base_fused + attn_out
 
-        # 3. Deep Temporal Transformer Pass
+        # Deep Temporal Transformer Pass
+        T_aligned = fused.size(1)
+        fused = fused + self.temporal_pos_emb[:, :T_aligned, :]
         fused = self.temporal_transformer(fused)
         return self.norm(fused)

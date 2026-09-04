@@ -10,11 +10,12 @@ class ALMTaskLoss(nn.Module):
     2. Evidence Temporal Grounding Binary Cross-Entropy Loss
     3. Calibrated Confidence Mean Squared Error Loss
     """
-    def __init__(self, answer_weight=1.0, evidence_weight=0.5, confidence_weight=0.3):
+    def __init__(self, answer_weight=1.0, evidence_weight=0.5, confidence_weight=0.3, recon_weight=0.5):
         super().__init__()
         self.answer_weight = answer_weight
         self.evidence_weight = evidence_weight
         self.confidence_weight = confidence_weight
+        self.recon_weight = recon_weight
 
         self.ce_loss = nn.CrossEntropyLoss(ignore_index=0)
         self.bce_loss = nn.BCELoss()
@@ -52,7 +53,7 @@ class ALMTaskLoss(nn.Module):
             else:
                 aligned_target_ids = target_answer_ids[:, :L_pred]
             
-            l_ans = self.ce_loss(answer_logits.view(-1, V), aligned_target_ids.view(-1))
+            l_ans = self.ce_loss(answer_logits.reshape(-1, V), aligned_target_ids.reshape(-1))
         else:
             l_ans = torch.tensor(0.0, device=answer_logits.device)
 
@@ -65,18 +66,37 @@ class ALMTaskLoss(nn.Module):
                 aligned_evidence = torch.cat([target_evidence, padding], dim=1)
             else:
                 aligned_evidence = target_evidence[:, :L_pred]
-            l_ev = self.bce_loss(evidence_scores, aligned_evidence)
+            # Cast to float32 for AMP safety (BCELoss is unsafe with fp16)
+            l_ev = self.bce_loss(evidence_scores.float(), aligned_evidence.float())
         else:
             l_ev = torch.tensor(0.0, device=evidence_scores.device)
 
         # 3. Confidence Calibration Loss
         l_conf = self.mse_loss(confidence, target_conf)
 
-        total_loss = (self.answer_weight * l_ans) + (self.evidence_weight * l_ev) + (self.confidence_weight * l_conf)
+        # 4. Modality Reconstruction Loss
+        if "target_speech" in targets:
+            T_audio = targets["target_speech"].size(1)
+            pred_speech = predictions["recon_speech"][:, -T_audio:, :]
+            pred_events = predictions["recon_events"][:, -T_audio:, :]
+            pred_speakers = predictions["recon_speakers"][:, -T_audio:, :]
+            pred_para = predictions["recon_para"][:, -T_audio:, :]
+
+            l_recon = (
+                self.mse_loss(pred_speech, targets["target_speech"]) +
+                self.mse_loss(pred_events, targets["target_events"]) +
+                self.mse_loss(pred_speakers, targets["target_speakers"]) +
+                self.mse_loss(pred_para, targets["target_para"])
+            ) / 4.0
+        else:
+            l_recon = torch.tensor(0.0, device=confidence.device)
+
+        total_loss = (self.answer_weight * l_ans) + (self.evidence_weight * l_ev) + (self.confidence_weight * l_conf) + (self.recon_weight * l_recon)
 
         return {
             "loss": total_loss,
             "answer_loss": l_ans.item() if isinstance(l_ans, torch.Tensor) else l_ans,
             "evidence_loss": l_ev.item() if isinstance(l_ev, torch.Tensor) else l_ev,
-            "confidence_loss": l_conf.item() if isinstance(l_conf, torch.Tensor) else l_conf
+            "confidence_loss": l_conf.item() if isinstance(l_conf, torch.Tensor) else l_conf,
+            "recon_loss": l_recon.item() if isinstance(l_recon, torch.Tensor) else l_recon
         }

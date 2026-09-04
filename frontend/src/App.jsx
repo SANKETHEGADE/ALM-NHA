@@ -12,17 +12,14 @@ import {
   getEmergencySession,
   getHypotheticalSession
 } from './services/sessionStore';
-import { evaluateThreat } from './services/fusionSynthesis';
-import { validateSpeakerSegments, segmentSpokenUtterance } from './services/diarizationValidator';
-import { extractAcousticFeatures } from './services/audioAnalyzer';
+import { analyzeAudio, checkHealth } from './services/api';
 import { ArrowLeft, Home, Shield, Activity } from 'lucide-react';
 
 /**
  * Smart Horizon Main Application
- * Integrates the high-impact Monochrome Landing Page and the Operational Forensic Console.
+ * Integrates Landing Page and Operational Core ALM Console.
  */
 export function App() {
-  // Navigation View State: 'landing' | 'auth' | 'console'
   const [currentView, setCurrentView] = useState('landing');
   const [user, setUser] = useState({
     name: 'Alex Rivera',
@@ -31,21 +28,18 @@ export function App() {
     role: 'Lead Forensic Analyst'
   });
 
-  // Sessions State (In-memory per sign-in with persistence seam)
   const [sessions, setSessions] = useState(() => createInitialSessions());
   const [activeSessionId, setActiveSessionId] = useState(() => sessions[0]?.id || 'sess_seeded_01');
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-
   const [realtimeTelemetry, setRealtimeTelemetry] = useState([]);
+  const [apiErrorMessage, setApiErrorMessage] = useState(null);
 
-  // Save sessions on state changes
   useEffect(() => {
     saveSessions(sessions);
   }, [sessions]);
 
-  // Handle responsive sidebar collapsing on tablet resize
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 900) {
@@ -59,23 +53,20 @@ export function App() {
 
   const activeSession = sessions.find((s) => s.id === activeSessionId) || sessions[0];
 
-  // Auth Success -> Jump to Console
   const handleAuthSuccess = (authenticatedUser) => {
     setUser(authenticatedUser);
     setCurrentView('console');
   };
 
-  // Sign out -> Return to Landing
   const handleSignOut = () => {
     setCurrentView('landing');
   };
 
-  // New Session Creation
   const handleNewSession = () => {
     const newId = `sess_${Math.random().toString(36).substring(2, 9)}`;
     const newSession = {
       id: newId,
-      label: `Forensic Session #${sessions.length + 1}`,
+      label: `Core ALM Session #${sessions.length + 1}`,
       createdAt: new Date().toISOString(),
       capture: null,
       result: null
@@ -85,12 +76,11 @@ export function App() {
     setActiveSessionId(newId);
   };
 
-  // Clear History Action
   const handleClearHistory = () => {
     const newId = `sess_${Math.random().toString(36).substring(2, 9)}`;
     const freshSession = {
       id: newId,
-      label: 'Forensic Session #1',
+      label: 'Core ALM Session #1',
       createdAt: new Date().toISOString(),
       capture: null,
       result: null
@@ -99,7 +89,6 @@ export function App() {
     setActiveSessionId(newId);
   };
 
-  // Delete Individual Session Action
   const handleDeleteSession = (sessionId, e) => {
     if (e) e.stopPropagation();
     setSessions((prev) => {
@@ -108,7 +97,7 @@ export function App() {
         const newId = `sess_${Math.random().toString(36).substring(2, 9)}`;
         const freshSession = {
           id: newId,
-          label: 'Forensic Session #1',
+          label: 'Core ALM Session #1',
           createdAt: new Date().toISOString(),
           capture: null,
           result: null
@@ -123,12 +112,10 @@ export function App() {
     });
   };
 
-  // Switch Active Session
   const handleSelectSession = (sessionId) => {
     setActiveSessionId(sessionId);
   };
 
-  // Scenario Loader
   const handleLoadScenario = (scenarioType) => {
     let scenarioData;
     if (scenarioType === 'joke') scenarioData = getSeededJokeSession();
@@ -147,124 +134,61 @@ export function App() {
     setActiveSessionId(newId);
   };
 
-  // Live Capture Handlers (Real Human Microphone Capture)
   const handleLiveCaptureStart = () => {
     setIsCapturing(true);
+    setApiErrorMessage(null);
   };
 
-  const handleLiveCaptureStop = async (spokenTranscript, duration = 3.0, acousticData = {}, audioBlob = null) => {
+  const handleLiveCaptureStop = async (spokenTranscript, duration = 3.0, acousticData = {}, audioBlob = null, questionText = 'Where is the speaker likely to be?') => {
     setIsCapturing(false);
     setIsLoadingAnalysis(true);
+    setApiErrorMessage(null);
 
-    // 1. Send real recorded audio Blob to Python FastAPI ML Service (Port 8000 GPU server)
-    let mlData = null;
-    if (audioBlob && audioBlob.size > 0) {
-      try {
-        const formData = new FormData();
-        formData.append('audio_file', audioBlob, 'live_microphone.wav');
-        formData.append('session_id', activeSessionId);
-
-        console.log('[handleLiveCaptureStop] Posting binary mic audio blob (%d bytes) to Python ML Service...', audioBlob.size);
-        const mlRes = await fetch('http://localhost:8000/analyze', {
-          method: 'POST',
-          body: formData
-        });
-
-        if (mlRes.ok) {
-          mlData = await mlRes.json();
-          console.log('[handleLiveCaptureStop] Real ML inference result from Python GPU server:', mlData);
-        } else {
-          console.warn('[handleLiveCaptureStop] ML service HTTP status:', mlRes.status, await mlRes.text());
-        }
-      } catch (err) {
-        console.log('[handleLiveCaptureStop] FastAPI ML Service fetch notice:', err);
-      }
+    let mlResult = null;
+    try {
+      mlResult = await analyzeAudio(
+        audioBlob,
+        questionText,
+        'hi',
+        activeSessionId
+      );
+    } catch (err) {
+      console.warn('[App] Core ALM API call exception:', err);
+      setApiErrorMessage(err.message || 'Core ALM ML Service call failed');
     }
 
-    const rawText = mlData?.transcript?.text || spokenTranscript || '';
-    const isSilence = !rawText.trim() || rawText === '[silence]' || rawText.includes('Silence / No speech');
-
-    const transcript = isSilence ? "No speech detected in audio input." : rawText;
-    const numDuration = Number(duration) || 3.0;
-
-    // Standardize acoustic features & fusion
-    const acousticFeatures = mlData?.acoustic_features || extractAcousticFeatures({
-      duration: numDuration,
-      wordCount: isSilence ? 0 : transcript.split(/\s+/).filter(Boolean).length,
-      measuredPitch: acousticData.measuredPitch,
-      measuredRms: acousticData.measuredRms
-    });
-
-    const lower = transcript.toLowerCase();
-    const hasThreatKeyword = lower.includes('help') || lower.includes('knife') || lower.includes('gun') || lower.includes('police') || lower.includes('emergency') || lower.includes('fire') || lower.includes('kill') || lower.includes('weapon');
-    const isJokeOrHypothetical = lower.includes('joke') || lower.includes('playing') || lower.includes('kidding') || lower.includes('what if') || lower.includes('suppose') || lower.includes('movie');
-    const isNegation = lower.includes('don\'t') || lower.includes('no knife') || lower.includes('no weapon') || lower.includes('no fire') || lower.includes('nobody is hurt');
-
-    const vocalBiometrics = mlData?.emotion || (isSilence
-      ? { emotion: 'neutral', arousal: 'low', confidence: 0.98 }
-      : ((hasThreatKeyword && !isJokeOrHypothetical && !isNegation)
-        ? { emotion: 'fear', arousal: 'high', confidence: 0.94 }
-        : { emotion: 'neutral', arousal: 'low', confidence: 0.95 }));
-
-    const acousticEvents = mlData?.sound_events || ((hasThreatKeyword && !isJokeOrHypothetical && !isNegation)
-      ? [{ type: 'scream', confidence: 0.89 }]
-      : []);
-
-    const rawSegments = isSilence ? [] : segmentSpokenUtterance(transcript, numDuration);
-    const diarized = isSilence
-      ? { speaker_segments: [], merge_decisions: [], confidence: 100 }
-      : validateSpeakerSegments(
-          mlData?.speakers?.diarization?.length > 0
-            ? mlData.speakers.diarization.map((spk, idx) => {
-                const spkNum = (spk.speaker_id && String(spk.speaker_id).includes('2')) ? 2 : 1;
-                const segText = rawSegments[idx]?.text || (spkNum === 1 ? rawSegments[0]?.text : rawSegments[1]?.text) || '';
-                return {
-                  speaker_id: `Speaker ${spkNum}`,
-                  start: Number(spk.start_sec ?? spk.start ?? 0.0),
-                  end: Number(spk.end_sec ?? spk.end ?? numDuration),
-                  text: segText
-                };
-              })
-            : rawSegments
-        );
-
-    const fused = mlData?.fusion || (isSilence
-      ? {
-          threat_level: 'NOMINAL',
-          fusion_rationale: 'Ambient silence audio capture evaluated. No vocal speech or acoustic threats detected.',
-          intent: 'Ambient Silence Baseline',
-          confidence: 99,
-          confidence_metrics: {
-            speech_confidence: 0,
-            classification_confidence: 99,
-            acoustic_confidence: 98,
-            speaker_confidence: 100
-          }
-        }
-      : evaluateThreat({
-          transcript,
-          vocal_biometrics: vocalBiometrics,
-          acoustic_events: acousticEvents,
-          acoustic_features: acousticFeatures
-        }));
+    const answerStr = mlResult?.answer || "Model inference complete.";
+    const confidenceVal = mlResult?.confidence || 0.85;
 
     setSessions((prev) =>
       prev.map((s) => {
         if (s.id === activeSessionId) {
           return {
             ...s,
-            label: `Voice: "${transcript.length > 20 ? transcript.slice(0, 20) + '...' : transcript}"`,
+            label: `Voice: "${questionText.slice(0, 24)}"`,
             capture: {
-              transcript,
-              duration: numDuration,
-              vocalBiometrics,
-              acousticEvents
+              audioBlob: audioBlob,
+              transcript: mlResult?.speech?.transcript || spokenTranscript || '',
+              duration: Number(duration) || 3.0,
+              question: questionText,
+              vocalBiometrics: mlResult?.paralinguistic || { emotion: 'neutral', arousal: 'low', confidence: 0.90 },
+              acousticEvents: mlResult?.audio_events || []
             },
             result: {
-              fusion: fused,
-              diarization: diarized,
-              acoustic_features: acousticFeatures,
-              threat_level: fused.threat_level,
+              answer: answerStr,
+              confidence: confidenceVal,
+              evidence: mlResult?.evidence || [],
+              reasoning_evidence: mlResult?.reasoning_evidence,
+              speech_evidence: mlResult?.speech_evidence,
+              non_speech_evidence: mlResult?.non_speech_evidence,
+              speaker_evidence: mlResult?.speaker_evidence,
+              paralinguistic_evidence: mlResult?.paralinguistic_evidence,
+              temporal_evidence: mlResult?.temporal_evidence,
+              speech: mlResult?.speech || {},
+              speakers: mlResult?.speakers || [],
+              audio_events: mlResult?.audio_events || [],
+              paralinguistic: mlResult?.paralinguistic || {},
+              scene: mlResult?.scene || {},
               analyzedAt: new Date().toISOString()
             }
           };
@@ -276,85 +200,56 @@ export function App() {
     setIsLoadingAnalysis(false);
   };
 
-  // Upload Audio Handler (Posts REAL uploaded audio file to Python FastAPI ML Service)
-  const handleAudioUploaded = async (file) => {
+  const handleAudioUploaded = async (file, questionText = 'Where is the speaker likely to be?') => {
     setIsLoadingAnalysis(true);
+    setApiErrorMessage(null);
     const fileName = file.name;
 
-    let mlData = null;
+    let mlResult = null;
     try {
-      const formData = new FormData();
-      formData.append('audio_file', file, fileName);
-      formData.append('session_id', activeSessionId);
-
-      const mlRes = await fetch('http://localhost:8000/analyze', {
-        method: 'POST',
-        body: formData
-      });
-
-      if (mlRes.ok) {
-        mlData = await mlRes.json();
-      }
+      mlResult = await analyzeAudio(
+        file,
+        questionText,
+        'hi',
+        activeSessionId
+      );
     } catch (err) {
-      console.log('FastAPI ML Service notice during audio file upload:', err);
+      console.warn('[App] Core ALM API upload exception:', err);
+      setApiErrorMessage(err.message || 'Core ALM ML Service upload failed');
     }
 
-    const isThreatSample = fileName.toLowerCase().includes('threat') || fileName.toLowerCase().includes('gun') || fileName.toLowerCase().includes('emergency') || fileName.toLowerCase().includes('scream');
-
-    const transcript = mlData?.transcript?.text || (isThreatSample
-      ? "Someone has a weapon, please send emergency police immediately!"
-      : `Forensic audio uploaded: "${fileName}" — speech sample evaluated for acoustic threat anomalies.`);
-
-    const duration = 4.5;
-    const acousticFeatures = mlData?.acoustic_features || extractAcousticFeatures({
-      duration,
-      wordCount: transcript.split(/\s+/).length,
-      measuredPitch: isThreatSample ? 245 : 132,
-      measuredRms: isThreatSample ? 0.85 : 0.42
-    });
-
-    const vocalBiometrics = mlData?.emotion || (isThreatSample
-      ? { emotion: 'fear', arousal: 'high', confidence: 0.96 }
-      : { emotion: 'neutral', arousal: 'low', confidence: 0.92 });
-
-    const acousticEvents = mlData?.sound_events || (isThreatSample
-      ? [{ type: 'gunshot', confidence: 0.96 }, { type: 'scream', confidence: 0.91 }]
-      : []);
-
-    const rawSegments = isThreatSample
-      ? [
-          { start: 0.0, end: 2.2, text: "Someone has a weapon, please send emergency police immediately!", speaker_id: 'Speaker 1' },
-          { start: 2.5, end: 4.5, text: "Stay calm, dispatch is responding now.", speaker_id: 'Speaker 2', embedding_similarity_to_prev: 0.38 }
-        ]
-      : segmentSpokenUtterance(transcript, duration);
-
-    const diarized = mlData?.diarization || validateSpeakerSegments(rawSegments);
-
-    const fused = mlData?.fusion || evaluateThreat({
-      transcript,
-      vocal_biometrics: vocalBiometrics,
-      acoustic_events: acousticEvents,
-      acoustic_features: acousticFeatures
-    });
+    const answerStr = mlResult?.answer || "Model inference complete.";
+    const confidenceVal = mlResult?.confidence || 0.85;
 
     setSessions((prev) =>
       prev.map((s) => {
         if (s.id === activeSessionId) {
           return {
             ...s,
-            label: `File: ${fileName.slice(0, 24)}`,
+            label: `File: ${fileName.slice(0, 20)}`,
             capture: {
-              transcript,
-              duration,
               fileName,
-              vocalBiometrics,
-              acousticEvents
+              audioFile: file,
+              question: questionText,
+              transcript: mlResult?.speech?.transcript || '',
+              vocalBiometrics: mlResult?.paralinguistic || { emotion: 'neutral', arousal: 'low', confidence: 0.90 },
+              acousticEvents: mlResult?.audio_events || []
             },
             result: {
-              fusion: fused,
-              diarization: diarized,
-              acoustic_features: acousticFeatures,
-              threat_level: fused.threat_level,
+              answer: answerStr,
+              confidence: confidenceVal,
+              evidence: mlResult?.evidence || [],
+              reasoning_evidence: mlResult?.reasoning_evidence,
+              speech_evidence: mlResult?.speech_evidence,
+              non_speech_evidence: mlResult?.non_speech_evidence,
+              speaker_evidence: mlResult?.speaker_evidence,
+              paralinguistic_evidence: mlResult?.paralinguistic_evidence,
+              temporal_evidence: mlResult?.temporal_evidence,
+              speech: mlResult?.speech || {},
+              speakers: mlResult?.speakers || [],
+              audio_events: mlResult?.audio_events || [],
+              paralinguistic: mlResult?.paralinguistic || {},
+              scene: mlResult?.scene || {},
               analyzedAt: new Date().toISOString()
             }
           };
@@ -366,17 +261,73 @@ export function App() {
     setIsLoadingAnalysis(false);
   };
 
-  // 1. LANDING PAGE VIEW (Default)
+  const handleAskQuestion = async (questionText) => {
+    if (!activeSession) return;
+    setIsLoadingAnalysis(true);
+    setApiErrorMessage(null);
+
+    const audioSource = activeSession.capture?.audioBlob || activeSession.capture?.audioFile;
+
+    let mlResult = null;
+    try {
+      mlResult = await analyzeAudio(
+        audioSource,
+        questionText,
+        'hi',
+        activeSessionId
+      );
+    } catch (err) {
+      console.warn('[App] Core ALM API question call exception:', err);
+      setApiErrorMessage(err.message || 'Core ALM ML Service question call failed');
+    }
+
+    const answerStr = mlResult?.answer || "Model inference complete.";
+    const confidenceVal = mlResult?.confidence || 0.85;
+
+    setSessions((prev) =>
+      prev.map((s) => {
+        if (s.id === activeSessionId) {
+          return {
+            ...s,
+            capture: {
+              ...s.capture,
+              question: questionText
+            },
+            result: {
+              ...s.result,
+              answer: answerStr,
+              confidence: confidenceVal,
+              evidence: mlResult?.evidence || s.result?.evidence || [],
+              reasoning_evidence: mlResult?.reasoning_evidence || s.result?.reasoning_evidence,
+              speech_evidence: mlResult?.speech_evidence || s.result?.speech_evidence,
+              non_speech_evidence: mlResult?.non_speech_evidence || s.result?.non_speech_evidence,
+              speaker_evidence: mlResult?.speaker_evidence || s.result?.speaker_evidence,
+              paralinguistic_evidence: mlResult?.paralinguistic_evidence || s.result?.paralinguistic_evidence,
+              temporal_evidence: mlResult?.temporal_evidence || s.result?.temporal_evidence,
+              speech: mlResult?.speech || s.result?.speech || {},
+              speakers: mlResult?.speakers || s.result?.speakers || [],
+              audio_events: mlResult?.audio_events || s.result?.audio_events || [],
+              paralinguistic: mlResult?.paralinguistic || s.result?.paralinguistic || {},
+              scene: mlResult?.scene || s.result?.scene || {},
+              analyzedAt: new Date().toISOString()
+            }
+          };
+        }
+        return s;
+      })
+    );
+
+    setIsLoadingAnalysis(false);
+  };
+
   if (currentView === 'landing') {
     return <LandingPage onOpenConsole={() => setCurrentView('console')} />;
   }
 
-  // 2. AUTH SCREEN VIEW
   if (currentView === 'auth') {
     return <AuthScreen onAuthSuccess={handleAuthSuccess} />;
   }
 
-  // 3. FULL OPERATIONAL CONSOLE VIEW
   return (
     <div className="h-screen w-screen bg-[#0d0d0d] text-[#ececec] flex flex-col overflow-hidden font-sans select-none antialiased">
       {/* Top Console Return Bar */}
@@ -392,17 +343,16 @@ export function App() {
 
         <div className="flex items-center gap-3.5 text-[#8e8ea0]">
           <span className="hidden sm:inline tracking-wider uppercase text-[10px] font-semibold">
-            LIVE FORENSIC WORKSTATION
+            CORE ALM WORKSTATION
           </span>
           <span className="px-2.5 py-0.5 rounded-md bg-[#1e1e1e] border border-[#262626] text-[10px] text-white font-bold shadow-2xs">
-            STATION 01
+            SH-DST-02
           </span>
         </div>
       </div>
 
-      {/* Main 2-Pane Console Layout */}
+      {/* Main Layout */}
       <div className="flex-1 flex overflow-hidden">
-        {/* LEFT SIDEBAR (Fixed width ~264px) */}
         <Sidebar
           sessions={sessions}
           activeSessionId={activeSessionId}
@@ -416,12 +366,16 @@ export function App() {
           onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
         />
 
-        {/* RIGHT MAIN WORKSPACE */}
         <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#0d0d0d]">
-          {/* Header Bar */}
           <ConsoleHeader activeSession={activeSession} />
 
-          {/* Results Area */}
+          {apiErrorMessage && (
+            <div className="bg-red-500/10 border-b border-red-500/30 px-6 py-2 text-xs text-red-400 flex items-center justify-between">
+              <span>⚠️ API Warning: {apiErrorMessage}</span>
+              <button onClick={() => setApiErrorMessage(null)} className="underline cursor-pointer">Dismiss</button>
+            </div>
+          )}
+
           <VerdictPanel
             activeSession={activeSession}
             isLoading={isLoadingAnalysis}
@@ -429,11 +383,11 @@ export function App() {
             realtimeTelemetry={realtimeTelemetry}
           />
 
-          {/* Composer Bar */}
           <ComposerBar
             onLiveCaptureStart={handleLiveCaptureStart}
             onLiveCaptureStop={handleLiveCaptureStop}
             onAudioUploaded={handleAudioUploaded}
+            onAskQuestion={handleAskQuestion}
             onLoadScenario={handleLoadScenario}
             onAudioTelemetryUpdate={(bars) => setRealtimeTelemetry(bars)}
             isCapturing={isCapturing}

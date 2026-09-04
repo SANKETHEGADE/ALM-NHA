@@ -65,7 +65,7 @@ class ASRModel(nn.Module):
         if self.lahari_asr is not None:
             try:
                 emb = self.lahari_asr.encode(audio_tensor) # (B, T, D_lahari)
-                if emb.ndim == 3:
+                if emb.ndim == 3 and emb.size(0) == audio_tensor.size(0):
                     return self.proj(emb)
             except Exception:
                 pass
@@ -82,9 +82,14 @@ class ASRModel(nn.Module):
             try:
                 res = self.lahari_asr.transcribe(audio_tensor, language=language_hint or "hi")
                 if isinstance(res, dict) and "text" in res:
-                    return res
+                    txt = res.get("text", "")
+                    conf = res.get("confidence", 0.0)
+                    # Check for script corruption / low confidence
+                    if conf >= 0.35 and txt and not any(ord(c) > 0x0E00 and ord(c) < 0x2000 for c in txt[:10]):
+                        return res
             except Exception:
                 pass
+
 
         if not isinstance(audio_tensor, torch.Tensor):
             audio_tensor = torch.randn(1, 80, 128)

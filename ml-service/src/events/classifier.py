@@ -39,7 +39,7 @@ class SoundEventClassifier(nn.Module):
         """
         return self.classifier(event_embeddings)
 
-    def detect_events(self, event_embeddings: torch.Tensor, total_duration: float = 5.0, threshold: float = 0.45) -> list:
+    def detect_events(self, event_embeddings: torch.Tensor, total_duration: float = 5.0, threshold: float = 0.60) -> list:
         if event_embeddings.ndim == 3:
             embeddings_b0 = event_embeddings[0]
         else:
@@ -51,7 +51,7 @@ class SoundEventClassifier(nn.Module):
         T_frames = probs.size(0)
         duration_per_frame = total_duration / max(1, T_frames)
 
-        detected_events = []
+        candidate_events = []
 
         for c_idx, class_name in enumerate(self.classes):
             class_probs = probs[:, c_idx]
@@ -63,12 +63,16 @@ class SoundEventClassifier(nn.Module):
                 end_t = round((indices[-1] + 1) * duration_per_frame, 2)
                 conf = float(class_probs[indices].mean().cpu().item())
                 
-                detected_events.append({
+                candidate_events.append({
                     "label": class_name,
                     "start": start_t,
                     "end": min(total_duration, end_t),
                     "confidence": round(max(0.50, min(0.99, conf)), 2)
                 })
+
+        # Sort candidate events by confidence descending
+        candidate_events.sort(key=lambda x: x["confidence"], reverse=True)
+        detected_events = candidate_events[:3]
 
         if not detected_events:
             mean_probs = torch.mean(probs, dim=0).cpu()
@@ -82,3 +86,4 @@ class SoundEventClassifier(nn.Module):
             })
 
         return detected_events
+
