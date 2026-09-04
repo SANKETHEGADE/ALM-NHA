@@ -18,7 +18,7 @@ const ML_TIMEOUT_MS = parseInt(process.env.ML_TIMEOUT_MS || '120000', 10);
  * @param {string} [options.languageHint]
  * @returns {Promise<Object>} ML response JSON
  */
-async function analyzeAudio({ sessionId, audioBuffer, filename = 'audio.wav', mimeType = 'audio/wav', languageHint, question, spokenTranscript }) {
+async function analyzeAudio({ sessionId, audioBuffer, filename = 'audio.wav', mimeType = 'audio/wav', languageHint, question, spokenTranscript, llmModel = 'gpt-4o-mini' }) {
   if (!sessionId) {
     throw new Error('sessionId is required for ML analysis');
   }
@@ -37,7 +37,8 @@ async function analyzeAudio({ sessionId, audioBuffer, filename = 'audio.wav', mi
       const audioBlob = new Blob([audioBuffer || Buffer.alloc(0)], { type: mimeType });
       formData.append('audio_file', audioBlob, filename);
       formData.append('session_id', sessionId);
-      formData.append('question', question || 'Where is the speaker likely to be?');
+      formData.append('question', question || '');
+      formData.append('llm_model', llmModel);
       if (languageHint) {
         formData.append('language_hint', languageHint);
       }

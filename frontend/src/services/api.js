@@ -31,7 +31,7 @@ export async function checkHealth() {
  * @param {string} [sessionId='sess_default'] - Session identifier
  * @returns {Promise<Object>} Core ALM structured JSON response
  */
-export async function analyzeAudio(audioSource, question = 'Where is the speaker likely to be?', languageHint = 'hi', sessionId = 'sess_01', spokenTranscript = '') {
+export async function analyzeAudio(audioSource, question = '', languageHint = 'hi', sessionId = 'sess_01', spokenTranscript = '', llmModel = 'gpt-4o-mini') {
   const formData = new FormData();
 
   if (audioSource) {
@@ -47,9 +47,10 @@ export async function analyzeAudio(audioSource, question = 'Where is the speaker
     formData.append('audio_file', audioSource, fileName);
   }
 
-  formData.append('question', question || 'Where is the speaker likely to be?');
+  formData.append('question', question || '');
   formData.append('language_hint', languageHint || 'hi');
   formData.append('session_id', sessionId);
+  formData.append('llm_model', llmModel);
   if (spokenTranscript) {
     formData.append('spoken_transcript', spokenTranscript);
   }

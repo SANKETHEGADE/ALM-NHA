@@ -139,7 +139,7 @@ export function App() {
     setApiErrorMessage(null);
   };
 
-  const handleLiveCaptureStop = async (spokenTranscript, duration = 3.0, acousticData = {}, audioBlob = null, questionText = 'Where is the speaker likely to be?') => {
+  const handleLiveCaptureStop = async (spokenTranscript, duration = 3.0, acousticData = {}, audioBlob = null, questionText = '', llmModel = 'gpt-4o-mini') => {
     setIsCapturing(false);
     setIsLoadingAnalysis(true);
     setApiErrorMessage(null);
@@ -151,7 +151,8 @@ export function App() {
         questionText,
         'hi',
         activeSessionId,
-        spokenTranscript
+        spokenTranscript,
+        llmModel
       );
     } catch (err) {
       console.warn('[App] Core ALM API call exception:', err);
@@ -201,7 +202,7 @@ export function App() {
     setIsLoadingAnalysis(false);
   };
 
-  const handleAudioUploaded = async (file, questionText = 'Where is the speaker likely to be?') => {
+  const handleAudioUploaded = async (file, questionText = '', llmModel = 'gpt-4o-mini') => {
     setIsLoadingAnalysis(true);
     setApiErrorMessage(null);
     const fileName = file.name;
@@ -212,7 +213,9 @@ export function App() {
         file,
         questionText,
         'hi',
-        activeSessionId
+        activeSessionId,
+        '',
+        llmModel
       );
     } catch (err) {
       console.warn('[App] Core ALM API upload exception:', err);

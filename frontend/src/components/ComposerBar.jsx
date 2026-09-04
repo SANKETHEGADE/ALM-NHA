@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, MicOff, Upload, Sparkles, AlertCircle, Play, Volume2, AlertTriangle, Send } from 'lucide-react';
+import { Mic, MicOff, Upload, Sparkles, AlertCircle, Play, Volume2, AlertTriangle, Send, ChevronUp, Bot } from 'lucide-react';
 import { calculatePitchFromBuffer } from '../services/audioAnalyzer';
 
 /**
@@ -23,7 +23,9 @@ export function ComposerBar({
   const [errorMessage, setErrorMessage] = useState(null);
   const [measuredPitch, setMeasuredPitch] = useState(null);
   const [measuredRms, setMeasuredRms] = useState(null);
-  const [questionText, setQuestionText] = useState('What can be inferred from speech and background sounds together?');
+  const [questionText, setQuestionText] = useState('');
+  const [llmModel, setLlmModel] = useState('gpt-4o-mini');
+  const [showModelDropdown, setShowModelDropdown] = useState(false);
 
   const timerRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -135,7 +137,7 @@ export function ComposerBar({
       if (onAudioTelemetryUpdate) onAudioTelemetryUpdate([]);
 
       const defaultText = finalRecordedText || '';
-      onLiveCaptureStop(defaultText, duration, { measuredPitch: pitch, measuredRms: rms }, recordedBlob, questionText);
+      onLiveCaptureStop(defaultText, duration, { measuredPitch: pitch, measuredRms: rms }, recordedBlob, questionText, llmModel);
 
     } else {
       setRecordSeconds(0);
@@ -238,7 +240,7 @@ export function ComposerBar({
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      onAudioUploaded(file, questionText);
+      onAudioUploaded(file, questionText, llmModel);
       e.target.value = '';
     }
   };
@@ -262,15 +264,31 @@ export function ComposerBar({
         </div>
       )}
 
-      {/* Live Voice Transcription */}
+      {/* Live Voice Transcription & Live Metrics */}
       {isCapturing && (
-        <div className="bg-[#1e1e1e] border border-[#2d2d2d] rounded-xl p-3 flex items-center gap-3 w-full max-w-3xl animate-in fade-in duration-150">
-          <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping shrink-0" />
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <span className="text-xs font-medium text-[#ececec] shrink-0">Live Voice:</span>
-            <span className="text-xs text-[#8e8ea0] italic truncate">
-              {liveTranscript ? `"${liveTranscript}"` : 'Listening for spoken voice...'}
-            </span>
+        <div className="bg-[#1e1e1e] border border-[#2d2d2d] rounded-xl p-3 flex flex-col gap-2 w-full max-w-3xl animate-in fade-in duration-150">
+          <div className="flex items-center gap-3">
+            <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping shrink-0" />
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <span className="text-xs font-medium text-[#ececec] shrink-0">Live Voice:</span>
+              <span className="text-xs text-[#8e8ea0] italic truncate">
+                {liveTranscript ? `"${liveTranscript}"` : 'Listening for spoken voice...'}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 pl-5 pt-1 border-t border-[#333] mt-1">
+            <div className="flex items-center gap-1.5">
+              <Volume2 className="w-3.5 h-3.5 text-emerald-500" />
+              <span className="text-[11px] text-[#a1a1aa] font-mono">
+                {measuredRms > 0 ? (20 * Math.log10(measuredRms)).toFixed(1) : '-∞'} dB
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-blue-500" />
+              <span className="text-[11px] text-[#a1a1aa] font-mono">
+                {measuredPitch ? `${measuredPitch.toFixed(1)} Hz` : '-- Hz'}
+              </span>
+            </div>
           </div>
         </div>
       )}
@@ -280,12 +298,12 @@ export function ComposerBar({
         onSubmit={(e) => {
           e.preventDefault();
           if (questionText && onAskQuestion) {
-            onAskQuestion(questionText);
+            onAskQuestion(questionText, llmModel);
           }
         }}
         className="w-full max-w-3xl flex flex-col gap-2"
       >
-        <div className="flex items-center gap-2 bg-[#181818] border border-[#262626] rounded-xl px-4 py-2 focus-within:border-[#404040] transition-colors">
+        <div className="flex items-center gap-2 bg-[#181818] border border-[#262626] rounded-xl px-4 py-2 focus-within:border-[#404040] transition-colors relative">
           <span className="text-xs text-[#8e8ea0] font-mono shrink-0">Question:</span>
           <input
             type="text"
@@ -295,6 +313,40 @@ export function ComposerBar({
             disabled={isLoading || isCapturing}
             className="flex-1 bg-transparent text-xs text-white placeholder-[#525252] focus:outline-none"
           />
+          
+          {/* AI Model Selector */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowModelDropdown(!showModelDropdown)}
+              disabled={isLoading || isCapturing}
+              className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-[#262626] hover:bg-[#333] text-xs text-[#d1d5db] font-medium transition-colors border border-[#404040] disabled:opacity-50 cursor-pointer"
+            >
+              <Bot className="w-3.5 h-3.5 text-blue-400" />
+              <span>{llmModel === 'gpt-4o-mini' ? 'GPT-4o-Mini' : 'GPT-3.5-Turbo'}</span>
+              <ChevronUp className="w-3 h-3 text-[#8e8ea0]" />
+            </button>
+            
+            {showModelDropdown && (
+              <div className="absolute bottom-full mb-2 right-0 w-36 bg-[#1e1e1e] border border-[#333] rounded-xl shadow-xl overflow-hidden z-50">
+                <button
+                  type="button"
+                  onClick={() => { setLlmModel('gpt-4o-mini'); setShowModelDropdown(false); }}
+                  className="w-full text-left px-3 py-2 text-xs text-[#d1d5db] hover:bg-[#262626] hover:text-white transition-colors"
+                >
+                  GPT-4o-Mini
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setLlmModel('gpt-3.5-turbo'); setShowModelDropdown(false); }}
+                  className="w-full text-left px-3 py-2 text-xs text-[#d1d5db] hover:bg-[#262626] hover:text-white transition-colors"
+                >
+                  GPT-3.5-Turbo
+                </button>
+              </div>
+            )}
+          </div>
+
           <button
             type="submit"
             disabled={isLoading || isCapturing || !questionText.trim()}
@@ -315,7 +367,7 @@ export function ComposerBar({
               onClick={() => {
                 setQuestionText(q);
                 if (onAskQuestion) {
-                  onAskQuestion(q);
+                  onAskQuestion(q, llmModel);
                 }
               }}
               disabled={isLoading || isCapturing}

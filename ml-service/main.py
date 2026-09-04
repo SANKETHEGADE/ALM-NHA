@@ -73,9 +73,10 @@ async def health_check():
 async def analyze_audio(
     audio_file: Optional[UploadFile] = File(None),
     session_id: Optional[str] = Form(None),
-    question: Optional[str] = Form("Where is the speaker likely to be?"),
+    question: Optional[str] = Form(""),
     language_hint: Optional[str] = Form("hi"),
-    spoken_transcript: Optional[str] = Form(None)
+    spoken_transcript: Optional[str] = Form(None),
+    llm_model: Optional[str] = Form("gpt-4o-mini")
 ):
     """
     POST /analyze
@@ -86,7 +87,7 @@ async def analyze_audio(
         raise HTTPException(status_code=503, detail="Core ALM model service is not initialized or unavailable.")
 
     # Sanitize and default question
-    final_question = question.strip() if question and question.strip() else "Where is the speaker likely to be?"
+    final_question = question.strip() if question and question.strip() else ""
     if len(final_question) > 500:
         raise HTTPException(status_code=400, detail="Question string exceeds maximum allowed length (500 characters).")
 
@@ -108,14 +109,15 @@ async def analyze_audio(
                     temp_audio_path = tmp.name
                 audio_source = temp_audio_path
 
-        print(f"[ML Service] Processing POST /analyze. Question: '{final_question}', Audio file: {audio_file.filename if audio_file else 'None'}, Spoken: '{spoken_transcript}'")
+        print(f"[ML Service] Processing POST /analyze. Question: '{final_question}', Audio file: {audio_file.filename if audio_file else 'None'}, Spoken: '{spoken_transcript}', LLM: '{llm_model}'")
 
         # Run canonical Core ALM inference
         analysis_result = pipeline_instance.analyze(
             audio_source=audio_source,
             question=final_question,
             language_hint=language_hint or "hi",
-            spoken_transcript=spoken_transcript
+            spoken_transcript=spoken_transcript,
+            llm_model=llm_model or "gpt-4o-mini"
         )
 
         return analysis_result

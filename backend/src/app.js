@@ -30,9 +30,11 @@ app.use('/api/v1/alerts', alertRoutes);
 async function handleAnalyzeRoute(req, res) {
   try {
     const file = req.file;
-    const question = req.body?.question || req.query?.question || 'Where is the speaker likely to be?';
+    const question = req.body?.question || req.query?.question || '';
     const audioBuffer = file ? file.buffer : (req.body?.audio_file ? Buffer.from(req.body.audio_file) : Buffer.from('mock audio'));
     const sessionId = req.body?.session_id || `sess_analyze_${Date.now()}`;
+
+    const llmModel = req.body?.llm_model || req.query?.llm_model || 'gpt-4o-mini';
 
     try {
       const mlResponse = await mlClient.analyzeAudio({
@@ -40,7 +42,8 @@ async function handleAnalyzeRoute(req, res) {
         audioBuffer,
         filename: file?.originalname || 'audio.wav',
         mimeType: file?.mimetype || 'audio/wav',
-        question
+        question,
+        llmModel
       });
 
       return res.status(200).json({

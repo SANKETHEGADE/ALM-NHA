@@ -166,7 +166,7 @@ class ALMInferencePipeline:
         return self.model.encode_multimodal(audio_tensor, disable_modalities=disable_modalities)
 
     @torch.no_grad()
-    def analyze(self, audio_source, question: str = "Where is the speaker likely to be?", language_hint: str = "hi", disable_modalities: list = None, spoken_transcript: str = None) -> dict:
+    def analyze(self, audio_source, question: str = "Where is the speaker likely to be?", language_hint: str = "hi", disable_modalities: list = None, spoken_transcript: str = None, llm_model: str = None) -> dict:
         """
         Run Core ALM latent forward pass and return structured analysis matching exact schema.
         """
@@ -347,26 +347,38 @@ class ALMInferencePipeline:
         emo_label_final = para_data.get("emotion", "neutral") if isinstance(para_data, dict) else "neutral"
         spk_count = len(formatted_speakers) if isinstance(formatted_speakers, list) and len(formatted_speakers) > 0 else 1
 
-        if any(w in q_lower for w in ["inferred", "together", "combine", "combination", "around", "joint", "holistic", "situation", "relationship"]):
-            if transcript and transcript != "Speech activity detected in audio recording.":
-                final_answer = f"The combination of '{top_event}' sound and '{transcript}' speech suggests a {scene_env.lower()} environment."
-            else:
-                final_answer = f"The combination of '{top_event}' acoustic event and background audio suggests an active {scene_env.lower()}."
-        elif any(w in q_lower for w in ["emotion", "feel", "affect", "tone", "mood"]):
-            final_answer = f"The speaker emotion is {emo_label_final}."
-        elif any(w in q_lower for w in ["speaker", "speakers", "how many", "count", "talking", "who"]):
-            final_answer = f"There is {spk_count} active speaker in the recording." if spk_count == 1 else f"There are {spk_count} active speakers in the recording."
-        elif any(w in q_lower for w in ["sound", "event", "audible", "hear", "present"]):
-            final_answer = f"Yes, {top_event} sound is present."
-        elif any(w in q_lower for w in ["where", "location", "scene", "environment", "place", "zone"]):
-            final_answer = f"The recording was taken in a {scene_env.lower()}."
-        elif any(w in q_lower for w in ["before", "after", "when", "time", "order", "temporal"]):
-            final_answer = f"The primary acoustic event occurs between 0.0s and 5.0s, overlapping with speech activity."
-        else:
-            if answer_text and answer_text != "Location is construction zone.":
-                final_answer = answer_text
-            else:
-                final_answer = f"The audio scene features {top_event} sound in a {scene_env.lower()}."
+        prompt = f"""
+        You are an advanced Core ALM (Audio Language Model) fusion engine.
+        Based on the following acoustic analysis, provide a concise 1-2 sentence final answer or summary.
+        User Question: {question if question else 'What is happening in this audio?'}
+        
+        Speech Transcript: {transcript}
+        Detected Emotion: {emo_label_final}
+        Detected Pitch: {avg_pitch} Hz, Loudness: {avg_db} dB
+        Background Acoustic Event: {top_event}
+        Environment: {scene_env}
+        """
+
+        try:
+            import openai
+            # Use the provided API key
+            client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY", ""))
+            llm = llm_model if llm_model else "gpt-4o-mini"
+            print(f"[ALMInferencePipeline] Requesting OpenAI summary using {llm}...")
+            
+            response = client.chat.completions.create(
+                model=llm,
+                messages=[
+                    {"role": "system", "content": "You are a concise audio analysis engine. Answer in 1 or 2 short sentences."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=60,
+                temperature=0.7
+            )
+            final_answer = response.choices[0].message.content.strip()
+        except Exception as e:
+            print(f"[ALMInferencePipeline] OpenAI API Error: {e}")
+            final_answer = f"The audio features {top_event} sound in a {scene_env.lower()}. Transcript: {transcript}. Emotion: {emo_label_final}."
 
         # Structured PS-aligned evidence decomposition
         if 'lang_val' not in locals():
