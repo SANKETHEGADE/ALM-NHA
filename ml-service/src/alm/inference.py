@@ -7,8 +7,9 @@ from src.alm.alm_model import CoreALM
 class ALMInferencePipeline:
     """
     Inference Pipeline for Core Audio Language Model (Core ALM).
-    Processes audio waveforms/tensors + question inputs dynamically.
-    No hardcoded mock data or demo fallbacks.
+    Consumes continuous latent numerical representations from specialized models
+    (ASR, Sound Events, Speaker Diarization, Paralinguistic Emotion) fused via a
+    spatio-temporal cross-attention Transformer.
     """
     def __init__(self, checkpoint_path: str = None, device: str = None):
         if device is None:
@@ -59,10 +60,17 @@ class ALMInferencePipeline:
         # Fallback tensor
         return torch.randn(1, 80, 128, device=self.device)
 
-    @torch.no_grad()
-    def analyze(self, audio_source, question: str = "Where is the speaker likely to be?", language_hint: str = "hi") -> dict:
+    def encode_latent_multimodal(self, audio_source, disable_modalities: list = None) -> torch.Tensor:
         """
-        Run Core ALM forward pass and return real dynamic analysis matching exact schema:
+        Encodes raw audio into continuous fused multimodal latent feature tensor (B, T_aligned, 256).
+        """
+        audio_tensor = self.load_audio(audio_source)
+        return self.model.encode_multimodal(audio_tensor, disable_modalities=disable_modalities)
+
+    @torch.no_grad()
+    def analyze(self, audio_source, question: str = "Where is the speaker likely to be?", language_hint: str = "hi", disable_modalities: list = None) -> dict:
+        """
+        Run Core ALM latent forward pass and return structured analysis matching exact schema:
         {
           "answer": "...",
           "confidence": 0.87,
@@ -76,7 +84,8 @@ class ALMInferencePipeline:
         """
         audio_tensor = self.load_audio(audio_source)
 
-        outputs = self.model(audio_tensor, question_text=question)
+        # Execute full end-to-end latent tensor forward pass through Core ALM Transformer
+        outputs = self.model(audio_tensor, question_text=question, disable_modalities=disable_modalities)
 
         raw_conf = float(outputs["confidence"].squeeze().cpu().item())
         confidence_val = round(max(0.50, min(0.99, raw_conf)), 2)
@@ -86,14 +95,16 @@ class ALMInferencePipeline:
         speakers_data = outputs.get("speakers", {})
         para_data = outputs.get("paralinguistic", {})
         evidence_scores = outputs.get("evidence_scores", None)
+        fused_tensor = outputs.get("fused_multimodal_tensor", None)
 
-        answer_text, evidence_list, scene_env = self._synthesize_dynamically(
+        answer_text, evidence_list, scene_env = self._synthesize_from_latent(
             question=question,
             speech_data=speech_data,
             events_data=events_data,
             speakers_data=speakers_data,
             para_data=para_data,
-            evidence_scores=evidence_scores
+            evidence_scores=evidence_scores,
+            fused_tensor=fused_tensor
         )
 
         formatted_events = events_data.get("events", events_data) if isinstance(events_data, dict) else events_data
@@ -118,8 +129,9 @@ class ALMInferencePipeline:
             "evidence": evidence_list
         }
 
-    def _synthesize_dynamically(self, question: str, speech_data: dict, events_data,
-                                speakers_data: dict, para_data: dict, evidence_scores: torch.Tensor):
+    def _synthesize_from_latent(self, question: str, speech_data: dict, events_data,
+                               speakers_data: dict, para_data: dict, evidence_scores: torch.Tensor,
+                               fused_tensor: torch.Tensor):
         transcript = speech_data.get("text", "") if isinstance(speech_data, dict) else str(speech_data)
         
         events_list = events_data.get("events", []) if isinstance(events_data, dict) else events_data
@@ -141,6 +153,7 @@ class ALMInferencePipeline:
 
         evidence_list = []
 
+        # Grounding evidence calculated directly from latent cross-attention evidence tensor scores
         if evidence_scores is not None and evidence_scores.numel() > 0:
             top_k_indices = torch.topk(evidence_scores[0], min(3, evidence_scores.size(1))).indices.cpu().tolist()
             duration_per_token = 5.0 / max(1, evidence_scores.size(1))
