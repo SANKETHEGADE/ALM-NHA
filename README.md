@@ -13,6 +13,7 @@ An end-to-end multimodal acoustic perception and intelligence platform built to 
 ## Table of Contents
 
 - [Overview](#overview)
+- [Problem Statement Alignment & Solution Matrix](#problem-statement-alignment--solution-matrix)
 - [Key Features](#key-features)
 - [System Architecture](#system-architecture)
 - [End-to-End Workflow](#end-to-end-workflow)
@@ -54,6 +55,20 @@ The platform continuously extracts:
 3. **Paralinguistic & Emotion Analysis**: Speech tone, vocal arousal, and affect detection (fear, urgency, alarmed, neutral).
 4. **Speaker Biometrics**: Active speaker identification, count, and temporal segment diarization.
 5. **Learned Multimodal Latent Fusion**: Projection of perception embeddings into a unified ALM reasoning head to generate actionable scene summaries and threat alert rules.
+
+---
+
+## Problem Statement Alignment & Solution Matrix
+
+This platform directly solves the core **ALM (Audio Language Model)** problem statement: enabling machines to simultaneously recognize, interpret, and jointly reason across speech and non-speech audio elements in complex real-world environments.
+
+| Problem Statement Expectation | ALM-NHCE Implementation | Technical Verification / Artifacts |
+| :--- | :--- | :--- |
+| **Simultaneous Speech & Non-Speech Perception** | Integrates 4 parallel perception branches: ASR (speech text), SED (sound events), Emotion/Paralinguistics, and Speaker Diarization. | `ml-service/src/alm/alm_model.py` & `inference.py` |
+| **Multilingual Asian Regional Coverage** | Speech recognition & auto-detection across **Hindi, Telugu, Mandarin, Urdu, Tamil, Bangla**, and **English**. | `ml-service/datasets/` (`IndicVoices`, `AISHELL`) & `src/asr/asr_model.py` |
+| **Joint Speech/Non-Speech QA Dataset Generation** | Pipeline generating a **9.96GB joint Audio-QA dataset** providing supervision across speech, acoustic events, and reasoning context. | `ml-service/datasets/generate_full_9_96gb_dataset.py` & `ps_aligned_qa.jsonl` |
+| **Cognitive Audio Reasoning ("Listen, Think, Understand")** | Projects 4 perception vectors into a $1024d$ spatio-temporal self-attention `FusionAdapter` to synthesize contextual answers. | `ml-service/src/alm/fusion_adapter.py` & `reasoning_layer.py` |
+| **Benchmark PS Airport Scenario Reproduction** | Recreates exact PS benchmark: *"Subway rail rattle + Highway vehicle noise + Jet engine + PA chime → Boarding concourse synthesis"*. | `LiveMonitorPage.jsx` (`handleSimulateSample('airport')`) & `inference.py` |
 
 ---
 
