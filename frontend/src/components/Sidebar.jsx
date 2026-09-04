@@ -1,5 +1,6 @@
 import React from 'react';
 import { Plus, Radio, Volume2, Clock, Inbox, LogOut, MessageSquare, Trash2 } from 'lucide-react';
+import { BrandLogo } from './BrandLogo';
 
 /**
  * ChatGPT-style Left Sidebar
@@ -45,20 +46,10 @@ export function Sidebar({
     >
       {/* Sidebar Header */}
       <div className="h-12 px-3.5 border-b border-[#262626] flex items-center justify-between shrink-0">
-        {!isCollapsed && (
-          <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="w-6 h-6 rounded-lg bg-white text-black font-semibold text-xs flex items-center justify-center shrink-0">
-              VX
-            </div>
-            <div className="flex flex-col min-w-0">
-              <span className="text-xs font-semibold text-[#ececec] truncate">
-                Vox
-              </span>
-              <span className="text-[10px] text-[#8e8ea0] truncate">
-                Forensic Console
-              </span>
-            </div>
-          </div>
+        {!isCollapsed ? (
+          <BrandLogo size="w-7 h-7" showText={true} />
+        ) : (
+          <BrandLogo size="w-7 h-7" showText={false} />
         )}
 
         <button

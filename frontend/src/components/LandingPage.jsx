@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowRight, Activity, Terminal } from 'lucide-react';
+import { BrandLogo } from './BrandLogo';
 
 const ASCII_RAMP = " .:-=+*#%@";
 
@@ -77,16 +78,14 @@ export function LandingPage({ user, onProceed }) {
     <div className="min-h-screen bg-background text-[#E6E6E8] flex flex-col justify-between items-center px-6 py-12 relative overflow-hidden select-none">
       {/* Top Header Tag */}
       <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-panel border border-border-hairline text-xs font-mono text-[#9E9EA4]">
-        <Activity className="w-3.5 h-3.5 text-amber" />
+        <BrandLogo size="w-4 h-4" showText={false} />
         <span>SYSTEM CALIBRATED · 48 KHZ ACOUSTIC SPECTRAL BUS</span>
       </div>
 
-      {/* Center Hero with ASCII Waveform */}
+      {/* Center Hero with Logo and ASCII Waveform */}
       <div className="w-full max-w-3xl flex flex-col items-center text-center my-auto gap-8">
-        <div className="flex flex-col items-center gap-2">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-white">
-            Smart Horizon
-          </h1>
+        <div className="flex flex-col items-center gap-3">
+          <BrandLogo size="w-16 h-16" showText={true} textClassName="text-2xl" />
           <p className="text-sm font-mono text-[#A3A3AC] max-w-md">
             Context-Aware Forensic Acoustic Intelligence & Multimodal Decision Engine
           </p>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { MoreHorizontal, Info } from 'lucide-react';
+import { BrandLogo } from './BrandLogo';
 
 /**
  * ChatGPT-style Slim Top Header
@@ -23,8 +24,9 @@ export function ConsoleHeader({ activeSession }) {
 
   return (
     <header className="h-12 px-5 bg-[#121212] border-b border-[#262626] flex items-center justify-between shrink-0 select-none relative">
-      {/* Session Title */}
-      <div className="flex items-center gap-2 min-w-0">
+      {/* Session Title & Logo */}
+      <div className="flex items-center gap-3 min-w-0">
+        <BrandLogo size="w-6 h-6" showText={false} />
         <h2 className="text-sm font-medium text-[#ececec] truncate">
           {activeSession?.label || 'New Forensic Session'}
         </h2>

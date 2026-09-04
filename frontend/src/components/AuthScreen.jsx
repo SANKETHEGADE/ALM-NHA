@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Shield, Sparkles, ArrowRight, Lock } from 'lucide-react';
+import { BrandLogo } from './BrandLogo';
 
 /**
  * Stage 1: Auth Screen (OAuth-Style Mock)
@@ -41,15 +42,10 @@ export function AuthScreen({ onAuthSuccess }) {
 
       <div className="w-full max-w-[420px] bg-panel border border-border-hairline rounded-lg p-8 shadow-2xl relative z-10 flex flex-col gap-6">
         {/* Brand Header */}
-        <div className="flex flex-col items-center text-center gap-2">
-          <div className="w-12 h-12 rounded-lg bg-panel-raised border border-border-hairline flex items-center justify-center text-amber shadow-inner">
-            <Shield className="w-6 h-6" />
-          </div>
-          <h1 className="text-xl font-bold tracking-tight text-white mt-1">
-            Vox
-          </h1>
+        <div className="flex flex-col items-center text-center gap-3">
+          <BrandLogo size="w-14 h-14" showText={true} textClassName="text-xl" />
           <p className="text-xs text-[#9E9EA4] font-mono">
-            Voice made easy
+            Context-Aware Audio Language Model Console
           </p>
         </div>
 
