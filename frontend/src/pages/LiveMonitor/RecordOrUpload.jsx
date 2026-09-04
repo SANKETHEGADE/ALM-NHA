@@ -539,14 +539,99 @@ export function RecordOrUpload({ sessionId, onSessionChange, onAudioReady, onSim
             <span className="cursor-select-caret">▾</span>
           </div>
 
-          <span className="cursor-chip-pill" style={{ marginLeft: '6px' }}>
-            <span>{isRecording ? 'Streaming 48kHz' : isPlaying ? 'Playing Audio' : 'Ready'}</span>
-          </span>
+          {isRecording ? (
+            <button
+              type="button"
+              onClick={stopRecording}
+              className="cursor-chip-pill"
+              style={{
+                marginLeft: '6px',
+                backgroundColor: '#ef4444',
+                color: '#ffffff',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                border: 'none',
+                padding: '4px 10px'
+              }}
+            >
+              <span>⏹ STOP MIC</span>
+            </button>
+          ) : (
+            <span className="cursor-chip-pill" style={{ marginLeft: '6px' }}>
+              <span>{isPlaying ? 'Playing Audio' : 'Ready'}</span>
+            </span>
+          )}
         </div>
       </div>
 
       {/* Wide Hero Visualizer Viewport */}
-      <div className="cursor-canvas-viewport">
+      <div className="cursor-canvas-viewport" style={{ position: 'relative' }}>
+        {/* Floating Active Recording Overlay Banner */}
+        {isRecording && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '14px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 40,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              backgroundColor: 'rgba(225, 29, 72, 0.95)',
+              boxShadow: '0 0 25px rgba(225, 29, 72, 0.75)',
+              padding: '8px 20px',
+              borderRadius: '30px',
+              border: '1px solid #fca5a5'
+            }}
+          >
+            <span
+              style={{
+                width: '10px',
+                height: '10px',
+                borderRadius: '50%',
+                backgroundColor: '#ffffff',
+                display: 'inline-block'
+              }}
+            />
+            <span
+              style={{
+                fontFamily: 'monospace',
+                fontWeight: 'bold',
+                fontSize: '0.85rem',
+                color: '#ffffff',
+                letterSpacing: '0.05em'
+              }}
+            >
+              LIVE MIC STREAMING [{formatSeconds(recordDuration)}]
+            </span>
+            <button
+              type="button"
+              onClick={stopRecording}
+              style={{
+                backgroundColor: '#ffffff',
+                color: '#e11d48',
+                border: 'none',
+                padding: '6px 16px',
+                borderRadius: '20px',
+                fontWeight: 'bold',
+                fontSize: '0.8rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.4)',
+                transition: 'transform 0.1s'
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="4" y="4" width="16" height="16" rx="2" />
+              </svg>
+              STOP RECORDING
+            </button>
+          </div>
+        )}
+
         <canvas
           ref={canvasRef}
           className="cursor-canvas-element"
