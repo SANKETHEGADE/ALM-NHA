@@ -28,6 +28,7 @@ class SoundEventClassifier(nn.Module):
             nn.Dropout(0.1),
             nn.Linear(128, num_classes)
         )
+        nn.init.constant_(self.classifier[-1].bias, -2.0)
         self.noise_head = nn.Linear(embed_dim, len(URBANSOUND_CLASSES))
 
     def forward(self, event_embeddings: torch.Tensor) -> torch.Tensor:
@@ -39,7 +40,7 @@ class SoundEventClassifier(nn.Module):
         """
         return self.classifier(event_embeddings)
 
-    def detect_events(self, event_embeddings: torch.Tensor, total_duration: float = 5.0, threshold: float = 0.60) -> list:
+    def detect_events(self, event_embeddings: torch.Tensor, total_duration: float = 5.0, threshold: float = 0.75) -> list:
         if event_embeddings.ndim == 3:
             embeddings_b0 = event_embeddings[0]
         else:
