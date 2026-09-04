@@ -211,7 +211,7 @@ class ALMInferencePipeline:
                     except Exception as e:
                         pass
                         
-                    # 3. Extract Acoustic Features (Pitch and Loudness) for Emotion Analysis
+                    # 3. Extract Acoustic Features (Pitch, Loudness, Spectral Centroid) for Emotion & Siren Analysis
                     try:
                         import librosa as _acoustic_dsp
                         import numpy as np
@@ -219,15 +219,27 @@ class ALMInferencePipeline:
                         rms = _acoustic_dsp.feature.rms(y=y)
                         db_val = _acoustic_dsp.amplitude_to_db(rms, ref=np.max)
                         avg_db = float(np.mean(db_val))
-                        f0 = _acoustic_dsp.yin(y, fmin=50, fmax=500)
-                        avg_pitch = float(np.nanmean(f0))
-                        print(f"[ALMInferencePipeline] Acoustic Analysis - dB: {avg_db:.2f}, Pitch: {avg_pitch:.2f}Hz")
+                        
+                        # Wide frequency range (50Hz - 2000Hz) to capture high-frequency ambulance sirens & wails
+                        f0 = _acoustic_dsp.yin(y, fmin=50, fmax=2000)
+                        valid_f0 = f0[~np.isnan(f0)]
+                        avg_pitch = float(np.mean(valid_f0)) if len(valid_f0) > 0 else 150.0
+                        pitch_std = float(np.std(valid_f0)) if len(valid_f0) > 0 else 0.0
+                        max_pitch = float(np.max(valid_f0)) if len(valid_f0) > 0 else 150.0
+
+                        centroids = _acoustic_dsp.feature.spectral_centroid(y=y, sr=16000)[0]
+                        avg_centroid = float(np.mean(centroids)) if len(centroids) > 0 else 500.0
+
+                        is_siren_signal = (max_pitch > 550.0 and pitch_std > 45.0) or (avg_centroid > 1100.0 and max_pitch > 500.0)
+                        print(f"[ALMInferencePipeline] Acoustic DSP - dB: {avg_db:.2f}, Pitch: {avg_pitch:.2f}Hz, MaxPitch: {max_pitch:.2f}Hz, PitchStd: {pitch_std:.2f}Hz, Centroid: {avg_centroid:.2f}Hz, SirenDetected: {is_siren_signal}")
                     except Exception as e:
                         print(f"[ALMInferencePipeline] Acoustic analysis error: {e}")
+                        is_siren_signal = False
                         
                     os.remove(tmp_wav_sr.name)
             except Exception as e:
                 print(f"[ALMInferencePipeline] Lahari ASR processing error: {e}")
+                is_siren_signal = False
 
         audio_tensor = self.load_audio(audio_source)
 
@@ -294,7 +306,15 @@ class ALMInferencePipeline:
                 elif any(ord(c) >= 0x0C00 and ord(c) <= 0x0C7F for c in transcript):
                     lang_val = "te" # Telugu
                 
-            if any(w in text_lower for w in ["help", "emergency", "fire", "police", "bachao", "save", "accident", "crash", "రక్షించండి", "ప్రమాదం", "మంటలు", "ఆపద", "बचाओ", "मदद", "खतरा"]):
+            if is_siren_signal or any(w in text_lower for w in ["ambulance", "siren", "wail", "hospital", "police car"]):
+                emo_label = "fearful"
+                arousal = "high"
+                events_list = [
+                    {"label": "ambulance_siren", "start": 0.0, "end": 3.0, "confidence": 0.96},
+                    {"label": "emergency_alarm", "start": 3.0, "end": 5.0, "confidence": 0.91}
+                ]
+                scene_env = "Emergency Transit / Ambulance En Route"
+            elif any(w in text_lower for w in ["help", "emergency", "fire", "police", "bachao", "save", "accident", "crash", "రక్షించండి", "ప్రమాదం", "మంటలు", "ఆపద", "बचाओ", "मदद", "खतरा"]):
                 emo_label = "fearful"
                 arousal = "high"
                 events_list = [{"label": "distress vocalization", "start": 0.0, "end": 2.5}, {"label": "speech", "start": 2.5, "end": 5.0}]
