@@ -706,7 +706,6 @@ export function RecordOrUpload({ sessionId, onSessionChange, onAudioReady, onSim
               }
             }}
           />
-        </div>
 
           <button
             className="btn-cursor-secondary"
