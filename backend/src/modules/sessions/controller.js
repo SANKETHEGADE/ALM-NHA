@@ -169,7 +169,10 @@ async function uploadAudio(req, res, next) {
           sessionId,
           audioBuffer,
           filename,
-          mimeType
+          mimeType,
+          question: req.body?.question,
+          languageHint: req.body?.language_hint,
+          spokenTranscript: req.body?.spoken_transcript
         });
 
         console.log(`[Sessions] ML analysis complete for session ${sessionId}`);

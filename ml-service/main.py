@@ -74,7 +74,8 @@ async def analyze_audio(
     audio_file: Optional[UploadFile] = File(None),
     session_id: Optional[str] = Form(None),
     question: Optional[str] = Form("Where is the speaker likely to be?"),
-    language_hint: Optional[str] = Form("hi")
+    language_hint: Optional[str] = Form("hi"),
+    spoken_transcript: Optional[str] = Form(None)
 ):
     """
     POST /analyze
@@ -99,22 +100,25 @@ async def analyze_audio(
                 raise HTTPException(status_code=413, detail="Uploaded audio file exceeds maximum limit of 50 MB.")
 
             if len(contents) > 0:
-                ext = os.path.splitext(audio_file.filename)[1].lower() if (audio_file and audio_file.filename) else ".wav"
+                ext = os.path.splitext(audio_file.filename)[1].lower() if (audio_file and audio_file.filename) else ".webm"
                 if not ext or len(ext) > 6:
-                    ext = ".wav"
+                    ext = ".webm"
                 with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
                     tmp.write(contents)
                     temp_audio_path = tmp.name
                 audio_source = temp_audio_path
 
-        print(f"[ML Service] Processing POST /analyze. Question: '{final_question}', Audio file: {audio_file.filename if audio_file else 'None'}")
+        print(f"[ML Service] Processing POST /analyze. Question: '{final_question}', Audio file: {audio_file.filename if audio_file else 'None'}, Spoken: '{spoken_transcript}'")
 
         # Run canonical Core ALM inference
         analysis_result = pipeline_instance.analyze(
             audio_source=audio_source,
             question=final_question,
-            language_hint=language_hint or "hi"
+            language_hint=language_hint or "hi",
+            spoken_transcript=spoken_transcript
         )
+
+        return analysis_result
 
         return analysis_result
 

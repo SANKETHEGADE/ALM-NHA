@@ -76,10 +76,16 @@ export function getSeededJokeSession() {
       rawSegments
     },
     result: {
+      answer: "The recording was taken in a quiet indoor room ambient environment.",
+      confidence: 0.94,
       fusion: fusedVerdict,
       diarization: diarization,
       acoustic_features: acousticFeatures,
       threat_level: fusedVerdict.threat_level,
+      speech_evidence: `Transcript: "${transcript}" | Language: en`,
+      non_speech_evidence: "Detected Events: None",
+      speaker_evidence: "1 speaker turn(s) active from 0.0s to 8.4s",
+      paralinguistic_evidence: "Emotion: neutral | Arousal: low",
       analyzedAt: new Date().toISOString()
     }
   };
@@ -146,10 +152,16 @@ export function getEmergencySession() {
       rawSegments
     },
     result: {
+      answer: "The combination of gunshot and scream sound events with urgent speech indicates an active threat emergency environment.",
+      confidence: 0.96,
       fusion: fusedVerdict,
       diarization: diarization,
       acoustic_features: acousticFeatures,
       threat_level: fusedVerdict.threat_level,
+      speech_evidence: `Transcript: "${transcript}" | Language: en`,
+      non_speech_evidence: "Detected Events: gunshot, scream",
+      speaker_evidence: "2 speaker turn(s) active from 0.0s to 6.2s",
+      paralinguistic_evidence: "Emotion: fear | Arousal: high",
       analyzedAt: new Date().toISOString()
     }
   };
@@ -205,10 +217,16 @@ export function getHypotheticalSession() {
       rawSegments
     },
     result: {
+      answer: "The speaker is inquiring about security procedures in an indoor office environment.",
+      confidence: 0.92,
       fusion: fusedVerdict,
       diarization: diarization,
       acoustic_features: acousticFeatures,
       threat_level: fusedVerdict.threat_level,
+      speech_evidence: `Transcript: "${transcript}" | Language: en`,
+      non_speech_evidence: "Detected Events: None",
+      speaker_evidence: "1 speaker turn(s) active from 0.0s to 4.2s",
+      paralinguistic_evidence: "Emotion: neutral | Arousal: low",
       analyzedAt: new Date().toISOString()
     }
   };

@@ -31,17 +31,18 @@ export async function checkHealth() {
  * @param {string} [sessionId='sess_default'] - Session identifier
  * @returns {Promise<Object>} Core ALM structured JSON response
  */
-export async function analyzeAudio(audioSource, question = 'Where is the speaker likely to be?', languageHint = 'hi', sessionId = 'sess_01') {
+export async function analyzeAudio(audioSource, question = 'Where is the speaker likely to be?', languageHint = 'hi', sessionId = 'sess_01', spokenTranscript = '') {
   const formData = new FormData();
 
   if (audioSource) {
     let fileName = audioSource.name;
     if (!fileName) {
-      const mimeType = audioSource.type || 'audio/wav';
+      const mimeType = audioSource.type || 'audio/webm';
       if (mimeType.includes('webm')) fileName = 'audio_capture.webm';
       else if (mimeType.includes('ogg')) fileName = 'audio_capture.ogg';
       else if (mimeType.includes('mp3')) fileName = 'audio_capture.mp3';
-      else fileName = 'audio_capture.wav';
+      else if (mimeType.includes('wav')) fileName = 'audio_capture.wav';
+      else fileName = 'audio_capture.webm';
     }
     formData.append('audio_file', audioSource, fileName);
   }
@@ -49,6 +50,9 @@ export async function analyzeAudio(audioSource, question = 'Where is the speaker
   formData.append('question', question || 'Where is the speaker likely to be?');
   formData.append('language_hint', languageHint || 'hi');
   formData.append('session_id', sessionId);
+  if (spokenTranscript) {
+    formData.append('spoken_transcript', spokenTranscript);
+  }
 
   console.log(`[API Client] Posting audio (${audioSource?.size || 0} bytes) to ${API_BASE_URL}/analyze with question: "${question}"`);
 

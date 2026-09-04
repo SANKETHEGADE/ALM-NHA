@@ -111,8 +111,21 @@ export function ComposerBar({
       const pitch = measuredPitch;
       const rms = measuredRms;
 
+      // Safely stop MediaRecorder and wait for onstop event to ensure all audio chunks are captured
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        await new Promise((resolve) => {
+          mediaRecorderRef.current.onstop = () => resolve();
+          try {
+            mediaRecorderRef.current.stop();
+          } catch (e) {
+            resolve();
+          }
+        });
+      }
+
+      const mimeType = mediaRecorderRef.current?.mimeType || 'audio/webm';
       const recordedBlob = mediaChunksRef.current.length > 0
-        ? new Blob(mediaChunksRef.current, { type: 'audio/wav' })
+        ? new Blob(mediaChunksRef.current, { type: mimeType })
         : null;
 
       stopAudioCaptureResources();

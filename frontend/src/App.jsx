@@ -150,7 +150,8 @@ export function App() {
         audioBlob,
         questionText,
         'hi',
-        activeSessionId
+        activeSessionId,
+        spokenTranscript
       );
     } catch (err) {
       console.warn('[App] Core ALM API call exception:', err);

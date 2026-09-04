@@ -18,7 +18,7 @@ const ML_TIMEOUT_MS = parseInt(process.env.ML_TIMEOUT_MS || '120000', 10);
  * @param {string} [options.languageHint]
  * @returns {Promise<Object>} ML response JSON
  */
-async function analyzeAudio({ sessionId, audioBuffer, filename = 'audio.wav', mimeType = 'audio/wav', languageHint, question }) {
+async function analyzeAudio({ sessionId, audioBuffer, filename = 'audio.wav', mimeType = 'audio/wav', languageHint, question, spokenTranscript }) {
   if (!sessionId) {
     throw new Error('sessionId is required for ML analysis');
   }
@@ -40,6 +40,9 @@ async function analyzeAudio({ sessionId, audioBuffer, filename = 'audio.wav', mi
       formData.append('question', question || 'Where is the speaker likely to be?');
       if (languageHint) {
         formData.append('language_hint', languageHint);
+      }
+      if (spokenTranscript) {
+        formData.append('spoken_transcript', spokenTranscript);
       }
 
       const targetUrl = `${ML_SERVICE_URL.replace(/\/+$/, '')}/analyze`;
