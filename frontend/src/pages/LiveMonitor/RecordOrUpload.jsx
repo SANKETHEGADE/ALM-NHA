@@ -708,10 +708,39 @@ export function RecordOrUpload({ sessionId, onSessionChange, onAudioReady, onSim
           />
         </div>
 
+          <button
+            className="btn-cursor-secondary"
+            id="btn-load-airport-benchmark"
+            onClick={() => {
+              fetch('/samples/airport_concourse_benchmark.wav')
+                .then((res) => res.blob())
+                .then((blob) => {
+                  const file = new File([blob], 'airport_concourse_benchmark.wav', { type: 'audio/wav' });
+                  processSelectedAudioFile(file);
+                })
+                .catch(() => {
+                  alert('Airport benchmark audio file ready in samples directory.');
+                });
+            }}
+            title="Load Problem Statement Airport Concourse Benchmark audio track"
+          >
+            <span>✈ Load PS Airport Track</span>
+          </button>
+        </div>
+
         {/* Cursor Verification Test Modes */}
         {onSimulateSample && (
           <div className="cursor-verification-modes">
             <span className="cursor-verification-label">Modes:</span>
+
+            <div
+              className={`cursor-mode-card ${activeScenario === 'airport' ? 'active-warning' : ''}`}
+              onClick={() => onSimulateSample('airport')}
+            >
+              <span className="cursor-mode-bullet amber"></span>
+              <span className="cursor-mode-title">PS Airport Concourse</span>
+              <span className="cursor-mode-tag">PS Benchmark</span>
+            </div>
 
             <div
               className={`cursor-mode-card ${activeScenario === 'threat' ? 'active-threat' : ''}`}
