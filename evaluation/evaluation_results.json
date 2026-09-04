@@ -1,0 +1,62 @@
+{
+  "qa_accuracy": 0.0,
+  "evidence_correctness": 100.0,
+  "temporal_reasoning_score": 100.0,
+  "scene_reasoning_score": 0.0,
+  "multilingual_performance": {
+    "hi": 0.0,
+    "ur": 0.0,
+    "zh": 0.0,
+    "en": 0.0,
+    "te": 0.0,
+    "ta": 0.0,
+    "bn": 0.0
+  },
+  "qualitative_examples": [
+    {
+      "sample_id": "scene_2301",
+      "question": "What is happening around the speaker?",
+      "ground_truth_answer": "The speaker is surrounded by a bustling outdoor street market with vehicle horns and vendor callouts.",
+      "predicted_answer": "The speaker diarization module detected 1 speaker(s) across the recording timeline.",
+      "confidence": 0.91,
+      "evidence": [
+        "Model attention peak at 0.0s - 0.07s (grounding weight: 0.49)",
+        "Model attention peak at 2.5s - 2.57s (grounding weight: 0.49)",
+        "Model attention peak at 2.57s - 2.64s (grounding weight: 0.49)",
+        "Acoustic event detected: 'aircraft' at 0.16s - 5.0s",
+        "Acoustic event detected: 'helicopter' at 0.0s - 5.0s",
+        "Decoded speech transcript: '\u093f\u092f\u093f\u092f\u093fc\u09aa\u092f\u09aa\u092f\u0bcd\u093fc\u093f\u092f\u093f\u5bb6\u093f\u06bb\u5bb6'"
+      ]
+    },
+    {
+      "sample_id": "scene_2302",
+      "question": "How many speakers are present?",
+      "ground_truth_answer": "There are 2 distinct speakers present in the audio dialogue.",
+      "predicted_answer": "The speaker diarization module detected 1 speaker(s) across the recording timeline.",
+      "confidence": 0.91,
+      "evidence": [
+        "Model attention peak at 0.22s - 0.29s (grounding weight: 0.49)",
+        "Model attention peak at 0.14s - 0.22s (grounding weight: 0.49)",
+        "Model attention peak at 2.1s - 2.17s (grounding weight: 0.49)",
+        "Acoustic event detected: 'aircraft' at 0.16s - 5.0s",
+        "Acoustic event detected: 'helicopter' at 0.0s - 5.0s",
+        "Decoded speech transcript: '\u093f\u0919\u093f\u0919\u093f\u0622\u092f\u093f\u09aa\u092f\u093f\u092f\u0b92\u092f\u093f\u092f\u7206\u093f'"
+      ]
+    },
+    {
+      "sample_id": "scene_2303",
+      "question": "What cannot be determined from the audio?",
+      "ground_truth_answer": "The exact identity of the customer and their payment method cannot be determined from the audio.",
+      "predicted_answer": "Core ALM reasoning completed: processed speech ('\u093f\u092f\u0777\u0622\u0699\u0777\u0919\u0607\u092f\u0919\u7206\u06bb\u06c6\u09aa\u0696\u0622\u093f\u092f\u0b92\u09aa\u6b7b\u0c12\u06bb\u092f\u0919\u093f\u5bb6\u093f\u06bb') and 18 acoustic event stream(s).",
+      "confidence": 0.91,
+      "evidence": [
+        "Model attention peak at 0.0s - 0.07s (grounding weight: 0.49)",
+        "Model attention peak at 2.61s - 2.68s (grounding weight: 0.49)",
+        "Model attention peak at 2.54s - 2.61s (grounding weight: 0.49)",
+        "Acoustic event detected: 'aircraft' at 0.0s - 5.0s",
+        "Acoustic event detected: 'helicopter' at 0.0s - 5.0s",
+        "Decoded speech transcript: '\u093f\u092f\u0777\u0622\u0699\u0777\u0919\u0607\u092f\u0919\u7206\u06bb\u06c6\u09aa\u0696\u0622\u093f\u092f\u0b92\u09aa\u6b7b\u0c12\u06bb\u092f\u0919\u093f\u5bb6\u093f\u06bb'"
+      ]
+    }
+  ]
+}

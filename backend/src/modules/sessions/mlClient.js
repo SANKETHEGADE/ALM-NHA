@@ -18,12 +18,10 @@ const ML_TIMEOUT_MS = parseInt(process.env.ML_TIMEOUT_MS || '120000', 10);
  * @param {string} [options.languageHint]
  * @returns {Promise<Object>} ML response JSON
  */
-async function analyzeAudio({ sessionId, audioBuffer, filename = 'audio.wav', mimeType = 'audio/wav', languageHint }) {
+async function analyzeAudio({ sessionId, audioBuffer, filename = 'audio.wav', mimeType = 'audio/wav', languageHint, question }) {
   if (!sessionId) {
     throw new Error('sessionId is required for ML analysis');
   }
-
-
 
   let attempt = 0;
   const maxAttempts = 2; // initial + 1 retry on 500
@@ -36,9 +34,10 @@ async function analyzeAudio({ sessionId, audioBuffer, filename = 'audio.wav', mi
     try {
       // Build multipart/form-data using standard Node FormData/Blob or FormData polyfill
       const formData = new FormData();
-      const audioBlob = new Blob([audioBuffer || Buffer.from('mock audio')], { type: mimeType });
+      const audioBlob = new Blob([audioBuffer || Buffer.alloc(0)], { type: mimeType });
       formData.append('audio_file', audioBlob, filename);
       formData.append('session_id', sessionId);
+      formData.append('question', question || 'Where is the speaker likely to be?');
       if (languageHint) {
         formData.append('language_hint', languageHint);
       }

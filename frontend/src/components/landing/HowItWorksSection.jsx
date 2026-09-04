@@ -10,7 +10,7 @@ export function HowItWorksSection() {
       icon: <Mic className="w-5 h-5 text-[#0A0A0A]" />,
       desc: 'Ingests raw 48 kHz audio streams. Simultaneously extracts semantic transcription, acoustic non-speech transients (screams, gunshots), and vocal biometrics (pitch, arousal, jitter).',
       bullets: [
-        'Whisper ASR with low-coherence safety checks',
+        'Multilingual IndicVoices ASR with low-coherence safety checks',
         'Independent PANNs acoustic event tagging',
         'Pitch & energy vocal stress biometrics'
       ]
