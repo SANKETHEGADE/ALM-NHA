@@ -73,6 +73,20 @@ export function HeroSection({ onOpenConsole }) {
       >
         {/* Left Column: Mixed-Weight Headline & Subtext */}
         <div className="lg:col-span-7 flex flex-col gap-6">
+          <motion.div variants={itemVariants} className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-[#0A0A0A] p-2 flex items-center justify-center shrink-0 shadow-lg border border-black/20">
+              <img src="/logo_amber.png" alt="Vox Logo" className="w-full h-full object-contain" />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-['Space_Grotesk'] font-bold text-lg text-[#0A0A0A] uppercase tracking-tight">
+                Vox ALM Engine
+              </span>
+              <span className="text-xs font-mono text-[#6B6B6B]">
+                Audio Language Model Platform
+              </span>
+            </div>
+          </motion.div>
+
           <motion.h1
             variants={itemVariants}
             className="font-['Space_Grotesk'] text-4xl sm:text-6xl md:text-7xl font-bold tracking-[-0.035em] text-[#0A0A0A] leading-[0.95] flex flex-col uppercase"

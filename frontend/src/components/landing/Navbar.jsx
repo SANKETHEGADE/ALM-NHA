@@ -31,14 +31,17 @@ export function Navbar({ onOpenConsole }) {
       }`}
     >
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        {/* Left: Brand Wordmark (Icon Removed) */}
-        <a href="#hero" className="flex items-center gap-2 group">
+        {/* Left: Brand Wordmark with Official Soundwave Logo */}
+        <a href="#hero" className="flex items-center gap-3 group">
+          <div className="w-8 h-8 rounded-lg bg-[#0A0A0A] p-1 flex items-center justify-center shrink-0 border border-black/10 shadow-sm group-hover:scale-105 transition-transform">
+            <img src="/logo_amber.png" alt="Vox Logo" className="w-full h-full object-contain" />
+          </div>
           <div className="flex flex-col">
             <span className="font-['Space_Grotesk'] font-bold text-sm tracking-tight text-[#0A0A0A] uppercase group-hover:text-[#2E2E2E] transition-colors">
-              Vox
+              Vox <span className="text-amber-600 font-mono text-xs">ALM</span>
             </span>
             <span className="text-[9px] font-mono font-semibold tracking-widest text-[#6B6B6B] uppercase">
-              Voice made easy
+              Audio Language Model
             </span>
           </div>
         </a>
