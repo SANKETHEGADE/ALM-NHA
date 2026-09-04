@@ -363,18 +363,31 @@ export function RecordOrUpload({ sessionId, onSessionChange, onAudioReady, onSim
 
       startStreamVisualizer(stream);
     } catch (err) {
+      setIsRecording(false);
       alert('Microphone access is required for live audio capture.');
     }
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setIsRecording(false);
+
+    if (mediaRecorderRef.current) {
+      try {
+        if (mediaRecorderRef.current.state !== 'inactive') {
+          mediaRecorderRef.current.stop();
+        }
+      } catch (e) {
+        console.warn('Error stopping MediaRecorder:', e);
       }
+    }
+
+    if (speechRecognitionRef.current) {
+      try { speechRecognitionRef.current.stop(); } catch (e) {}
+      speechRecognitionRef.current = null;
     }
   };
 
@@ -576,9 +589,10 @@ export function RecordOrUpload({ sessionId, onSessionChange, onAudioReady, onSim
               className="btn-cursor-primary recording"
               id="btn-stop-record"
               onClick={stopRecording}
+              style={{ backgroundColor: '#ef4444', borderColor: '#dc2626', color: '#ffffff' }}
             >
-              <span>■</span>
-              <span>Halt Capture [{formatSeconds(recordDuration)}]</span>
+              <span>⏹</span>
+              <span>Stop Recording ({formatSeconds(recordDuration)})</span>
             </button>
           )}
 
