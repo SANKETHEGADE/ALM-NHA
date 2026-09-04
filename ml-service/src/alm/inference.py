@@ -297,7 +297,7 @@ class ALMInferencePipeline:
             if any(w in text_lower for w in ["help", "emergency", "fire", "police", "bachao", "save", "accident", "crash", "రక్షించండి", "ప్రమాదం", "మంటలు", "ఆపద", "बचाओ", "मदद", "खतरा"]):
                 emo_label = "fearful"
                 arousal = "high"
-                events_list = [{"label": "siren", "start": 0.0, "end": 2.0}, {"label": "alarm", "start": 2.0, "end": 5.0}]
+                events_list = [{"label": "distress vocalization", "start": 0.0, "end": 2.5}, {"label": "speech", "start": 2.5, "end": 5.0}]
                 scene_env = "Emergency Scene"
             elif any(w in text_lower for w in ["hello", "voice", "test", "audible", "mic", "checking", "नमस्ते", "आवाज़", "माइक", "जाँच", "హలో", "వాయిస్", "మైక్", "టెస్ట్"]):
                 emo_label = "neutral"
