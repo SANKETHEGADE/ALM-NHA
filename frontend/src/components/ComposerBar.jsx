@@ -38,6 +38,13 @@ export function ComposerBar({
   const mediaChunksRef = useRef([]);
   const liveTranscriptAccumulatorRef = useRef('');
 
+  const formatSeconds = (sec) => {
+    if (!Number.isFinite(sec) || isNaN(sec) || sec < 0) return '00:00';
+    const mins = Math.floor(sec / 60);
+    const secs = Math.floor(sec % 60);
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
   // Example PS-aligned question suggestions
   const questionSuggestions = [
     "What can be inferred from speech and background sounds together?",
@@ -266,17 +273,30 @@ export function ComposerBar({
 
       {/* Live Voice Transcription & Live Metrics */}
       {isCapturing && (
-        <div className="bg-[#1e1e1e] border border-[#2d2d2d] rounded-xl p-3 flex flex-col gap-2 w-full max-w-3xl animate-in fade-in duration-150">
-          <div className="flex items-center gap-3">
-            <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping shrink-0" />
-            <div className="flex items-center gap-2 min-w-0 flex-1">
-              <span className="text-xs font-medium text-[#ececec] shrink-0">Live Voice:</span>
-              <span className="text-xs text-[#8e8ea0] italic truncate">
-                {liveTranscript ? `"${liveTranscript}"` : 'Listening for spoken voice...'}
-              </span>
+        <div className="bg-[#1e1e1e] border border-red-500/40 rounded-xl p-3 flex flex-col gap-2 w-full max-w-3xl animate-in fade-in duration-150 shadow-lg">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="w-3 h-3 rounded-full bg-red-500 animate-ping shrink-0" />
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <span className="text-xs font-bold text-red-400 shrink-0">RECORDING [{formatSeconds(recordSeconds)}]:</span>
+                <span className="text-xs text-[#ececec] italic truncate">
+                  {liveTranscript ? `"${liveTranscript}"` : 'Listening for spoken voice...'}
+                </span>
+              </div>
             </div>
+
+            {/* Prominent Stop Recording Button inside Banner */}
+            <button
+              type="button"
+              onClick={handleToggleCapture}
+              className="px-4 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer shrink-0"
+            >
+              <MicOff className="w-4 h-4" />
+              <span>STOP RECORDING</span>
+            </button>
           </div>
-          <div className="flex items-center gap-4 pl-5 pt-1 border-t border-[#333] mt-1">
+
+          <div className="flex items-center gap-4 pl-6 pt-1 border-t border-[#333] mt-1">
             <div className="flex items-center gap-1.5">
               <Volume2 className="w-3.5 h-3.5 text-emerald-500" />
               <span className="text-[11px] text-[#a1a1aa] font-mono">
@@ -394,19 +414,28 @@ export function ComposerBar({
         />
 
         {/* Microphone Button */}
-        <button
-          type="button"
-          onClick={handleToggleCapture}
-          disabled={isLoading}
-          className={`p-3 rounded-full bg-transparent transition-all duration-150 active:scale-95 cursor-pointer ${
-            isCapturing
-              ? 'text-red-500 animate-pulse bg-red-500/10'
-              : 'text-white hover:text-neutral-300 hover:bg-[#1e1e1e]/50'
-          }`}
-          title={isCapturing ? "Stop Voice Recording" : "Start Voice Recording"}
-        >
-          {isCapturing ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
-        </button>
+        {isCapturing ? (
+          <button
+            type="button"
+            onClick={handleToggleCapture}
+            disabled={isLoading}
+            className="px-5 py-2.5 rounded-full bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold text-xs flex items-center gap-2 shadow-xl transition-all cursor-pointer animate-pulse"
+            title="Stop Voice Recording"
+          >
+            <MicOff className="w-4 h-4" />
+            <span>STOP RECORDING ({formatSeconds(recordSeconds)})</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={handleToggleCapture}
+            disabled={isLoading}
+            className="p-3 rounded-full bg-transparent text-white hover:text-neutral-300 hover:bg-[#1e1e1e]/50 transition-all duration-150 active:scale-95 cursor-pointer"
+            title="Start Voice Recording"
+          >
+            <Mic className="w-6 h-6" />
+          </button>
+        )}
 
         {/* Upload Audio File Button */}
         <button
