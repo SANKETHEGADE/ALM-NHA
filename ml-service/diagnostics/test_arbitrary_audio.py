@@ -10,7 +10,7 @@ import tempfile
 def generate_synthetic_audio_files():
     tmp_dir = os.path.join(tempfile.gettempdir(), "arbitrary_tests")
     os.makedirs(tmp_dir, exist_ok=True)
-    sr = 16000
+    sr = 16000 
     duration = 3.0
     t = np.linspace(0, duration, int(sr * duration), endpoint=False)
 
