@@ -1,15 +1,8 @@
-/**
- * controller.js
- * Request handlers for History, Session Detail, and Analytics endpoints.
- * Read-only aggregation controller.
- */
+
 
 const queries = require('./queries');
 
-/**
- * GET /api/v1/sessions?page=1&limit=10
- * Returns paginated sessions list with alert flag and summary.
- */
+
 async function listSessions(req, res) {
   try {
     const page = parseInt(req.query.page, 10) || 1;
